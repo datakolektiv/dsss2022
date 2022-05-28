@@ -55,7 +55,7 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
 
 - Saturday, 25. June, 09:00 - 18:00 CET, Startit center, Belgrade
    - 09:00 - 12:30. Random Forests for Regression and Classification Problems [[review1]](https://www.youtube.com/watch?v=gmmV4drPTS4), [[review2]](https://www.youtube.com/watch?v=RrJtu5RLZQs)
-   - 14:30 - 18:00. Gradient Boosting: XGBoost Model for Regression and Classification Problems
+   - 14:30 - 18:00. Gradient Boosting: XGBoost Model for Regression and Classification Problems [[review1]](https://xgboost.readthedocs.io/en/stable/tutorials/model.html); **note** a bit heavy on math perhaps; [[review2]](https://www.youtube.com/watch?v=R_uF2ZgmRiw)
 - Asynchronous (Slack, GitHub), Monday, 27. June - Thursday, 30. June
    - Case Study 3: Web Content Popularity Prediction.
    - Case Study 4: Complete Model Layout and Find-Tuning XGBoost for Regression and Classification Problems 
