@@ -4,11 +4,13 @@
 This is a DataKolektiv repository for our MACHINE LEARNING IN R Data Science Summer School 2022.
 
 The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs/beograd/) every Saturday in June 2022, 09:00 - 18:00 CET. 
+
 Asynchronous consultations and work will be carried on via Slack and GitHub 4. - 30. June 2022.  
 
-PROGRAM
+### PROGRAM
 
 **Week 1.**
+
 - Saturday, 4. June, 09:00 - 18:00 CET, Startit centar, Beograd
 
 -- 09:00 - 12:30. Introduction to R programming: data structures, data.frame class, I/O operations, control flow, functional programming.
