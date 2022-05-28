@@ -36,7 +36,7 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
    - 14:30 - 18:00. Binomial Logistic and Multinomial Logistic Regression for Classification Problems [[review1]](https://www.youtube.com/watch?v=DMAdIdUHpZY), [[review2]](https://youtu.be/PpDB66hzjGw)
 - Asynchronous (Slack, GitHub), Monday, 13. June - Friday, 17. June
    - Case Study 1: Churn Prediction
-   - Control for Overfit 1: Regularized Linear and Generalized Linear Models
+   - Control for Overfit 1: Regularized Linear and Generalized Linear Models [[review1]](https://www.youtube.com/watch?v=Q81RR3yKn30), [[review2]](https://www.youtube.com/watch?v=NGf0voTMlcs), [[review3]](https://www.youtube.com/watch?v=1dKRdX9bfIo)
 
 --- 
 
