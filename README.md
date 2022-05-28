@@ -1,4 +1,4 @@
-# DataKolektiv 
+![](DK_Logo_White_150.png)
 ## DATA SCIENCE SUMMER SCHOOL 2022 :: MACHINE LEARNING IN R
 This is a DataKolektiv repository for our MACHINE LEARNING IN R Data Science Summer School 2022.
 
