@@ -43,7 +43,7 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
 **WEEK 3.**
 
 - Saturday, 18. June, 09:00 - 18:00 CET, Startit center, Belgrade
-   - 09:00 - 12:30. Cross-Validation and Regularization in Classification Problems [[review]](https://www.youtube.com/watch?v=fSytzGwwBVw); Model Selection (ROC analysis) [[review; note: Python code, we will have ours in R]](https://towardsdatascience.com/roc-curve-a-complete-introduction-2f2da2e0434c)
+   - 09:00 - 12:30. Cross-Validation and Regularization in Classification Problems [[review]](https://www.youtube.com/watch?v=fSytzGwwBVw); Model Selection (ROC analysis) [[review]](https://towardsdatascience.com/roc-curve-a-complete-introduction-2f2da2e0434c); **note**: Python code, we will have ours in R
    - 14:30 - 18:00. Decision Trees (CART) [[review]](https://www.youtube.com/watch?v=uXIIk7suD6c)
 - Asynchronous (Slack, GitHub), Monday, 20. June - Friday, 24. June
    - Case Study 2: Price Prediction in the Real Estate Market
