@@ -32,7 +32,6 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
 **WEEK 2.**
 
 - Saturday 11. June, 09:00 - 18:00 CET, Startit center, Belgrade
-
    - 09:00 - 12:30. Linear and Multiple Linear Regression
    - 14:30 - 18:00. Binomial Logistic and Multinomial Logistic Regression for Classification Problems
 - Asynchronous (Slack, GitHub), Monday, 13. June - Friday, 17. June
@@ -44,7 +43,6 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
 **WEEK 3.**
 
 - Saturday, 18. June, 09:00 - 18:00 CET, Startit center, Belgrade
-
    - 09:00 - 12:30. Cross-Validation and Regularization in Classification Problems; Model Selection (ROC analysis.
    - 14:30 - 18:00. Decision Trees (CART)
 - Asynchronous (Slack, GitHub), Monday, 20. June - Friday, 24. June
