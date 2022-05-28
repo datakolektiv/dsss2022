@@ -10,7 +10,9 @@ PROGRAM
 
 **Week 1.**
 - Saturday, 4. June, 09:00 - 18:00 CET, Startit centar, Beograd
+
 -- 09:00 - 12:30. Introduction to R programming: data structures, data.frame class, I/O operations, control flow, functional programming.
+
 -- 14:30 - 18:00. [tidyverse]() approach to R programming: [dplyr] and [tidyr] for data management and processing.
 
 
