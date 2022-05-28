@@ -15,7 +15,7 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
 
    - 09:00 - 12:30. [Introduction to R programming](https://www.youtube.com/playlist?list=PLjgj6kdf_snYBkIsWQYcYtUZiDpam7ygg): [data types](https://youtu.be/SkZE15wANCM), [vectors, matrices, and vectorization](https://youtu.be/2TcPAZOyV0U), [lists](https://youtu.be/SsOs8Dddk-A), the [data.frame class](https://youtu.be/qisuPBbJe3U), [I/O operations](https://youtu.be/oRaPjJefoTo), [control flow](https://youtu.be/h2zPmHhzmzo), [functions](https://youtu.be/p8tAQx7ijXE), [functional programming](https://youtu.be/34sbvhr_pm8).
    - 14:30 - 18:00. [tidyverse](https://www.tidyverse.org/) approach to R programming: [dplyr](https://dplyr.tidyverse.org/) and [tidyr](https://tidyr.tidyverse.org/) for data management and processing.<br>
-   - Asynchronous (Slack, GitHub), Monday, 6. June - Friday, 10. June
+- Asynchronous (Slack, GitHub), Monday, 6. June - Friday, 10. June
    - Data Visualization in [ggplot2](https://ggplot2.tidyverse.org/)
    - Data Cleaning and Transformation (i.e. Data Wrangling) in [stringr](https://stringr.tidyverse.org/), [dplyr](https://dplyr.tidyverse.org/) and [tidyr](https://tidyr.tidyverse.org/); [Exploratory Data Analysis (EDA)](http://datakolektiv.com/app_direct/introdsnontech/IntroDataScience_NonTech_S06.nb.html) in R.
 
