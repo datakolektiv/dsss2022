@@ -14,7 +14,7 @@ Asynchronous consultations and work will be carried on via Slack and GitHub 4. -
 
 - Saturday, 4. June, 09:00 - 18:00 CET, Startit centar, Beograd
 
-   - 09:00 - 12:30. Introduction to R programming: data structures, data.frame class, I/O operations, control flow, functional programming.
+   - 09:00 - 12:30. Introduction to R programming: data structures, data.frame class, I/O operations, [control flow](https://youtu.be/h2zPmHhzmzo), functional programming.
    - 14:30 - 18:00. [tidyverse](https://www.tidyverse.org/) approach to R programming: [dplyr](https://dplyr.tidyverse.org/) and [tidyr](https://tidyr.tidyverse.org/) for data management and processing.
 
 
