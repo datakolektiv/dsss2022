@@ -18,6 +18,14 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
 - Asynchronous (Slack, GitHub), Monday, 6. June - Friday, 10. June
    - Data Visualization in [ggplot2](https://ggplot2.tidyverse.org/)
    - Data Cleaning and Transformation (i.e. Data Wrangling) in [stringr](https://stringr.tidyverse.org/), [dplyr](https://dplyr.tidyverse.org/) and [tidyr](https://tidyr.tidyverse.org/); [Exploratory Data Analysis (EDA)](http://datakolektiv.com/app_direct/introdsnontech/IntroDataScience_NonTech_S06.nb.html) in R.
+- Learning Material: 
+   - [R for Data Science](https://r4ds.had.co.nz/)
+   - [DataKolektiv's DATA SCIENCE SESSIONS: Session 01-08](http://datakolektiv.com/app_direct/introdsnontech/)
+- Review Material (Math):
+   - [Khan Academy: Probability](https://www.khanacademy.org/math/statistics-probability/probability-library)
+   - [Khan Academy: Random Variables](https://www.khanacademy.org/math/statistics-probability/random-variables-stats-library)
+   - [Khan Academy: Modelling Data Distributions](https://www.khanacademy.org/math/statistics-probability/modeling-distributions-of-data)
+   - [Khan Academy: Summarizing Quantitative Data](https://www.khanacademy.org/math/statistics-probability/summarizing-quantitative-data)
 
 
 Nedelja 2.
