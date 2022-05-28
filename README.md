@@ -11,8 +11,7 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
 
 **WEEK 1.**
 
-- Saturday, 4. June, 09:00 - 18:00 CET, Startit centar, Beograd
-
+- Saturday, 4. June, 09:00 - 18:00 CET, Startit center, Beograd
    - 09:00 - 12:30. [Introduction to R programming](https://www.youtube.com/playlist?list=PLjgj6kdf_snYBkIsWQYcYtUZiDpam7ygg): [data types](https://youtu.be/SkZE15wANCM), [vectors, matrices, and vectorization](https://youtu.be/2TcPAZOyV0U), [lists](https://youtu.be/SsOs8Dddk-A), the [data.frame class](https://youtu.be/qisuPBbJe3U), [I/O operations](https://youtu.be/oRaPjJefoTo), [control flow](https://youtu.be/h2zPmHhzmzo), [functions](https://youtu.be/p8tAQx7ijXE), [functional programming](https://youtu.be/34sbvhr_pm8).
    - 14:30 - 18:00. [tidyverse](https://www.tidyverse.org/) approach to R programming: [dplyr](https://dplyr.tidyverse.org/) and [tidyr](https://tidyr.tidyverse.org/) for data management and processing.<br>
 - Asynchronous (Slack, GitHub), Monday, 6. June - Friday, 10. June
@@ -27,14 +26,20 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
    - [Khan Academy: Modelling Data Distributions](https://www.khanacademy.org/math/statistics-probability/modeling-distributions-of-data)
    - [Khan Academy: Summarizing Quantitative Data](https://www.khanacademy.org/math/statistics-probability/summarizing-quantitative-data)
 
+---
 
-Nedelja 2.
-Uživo: subota, 11. jun, 09:00 - 18:00, Startit centar, Beograd
-09:00 - 12:30. Linearna i multipla linearna regresija.
-14:30 - 18:00. Binomijalna logistička i multinomijalna logistička regresija za klasifikacione probleme.
-Asinhrono (Slack, GitHub), ponedeljak, 13. jun - petak, 17. Jun
-Studija slučaja 1: Predikcija odlaska korisnika (churn prediction).
-Problem ovefita 1: Regularizacija linearnog regresionog modela.
+**WEEK 2.**
+
+- Sunday 11. June, 09:00 - 18:00 CET, Startit center, Beograd
+
+   - 09:00 - 12:30. Linear and Multiple Linear Regression
+   - 14:30 - 18:00. Binomial Logistic and Multinomial Logistic Regression for Classification Problems
+- Asynchronous (Slack, GitHub), Monday, 13. June - Friday, 17. June
+   - Case Study 1: Churn Prediction
+   - Control for Overfit 1: Regularized Linear and Generalized Linear Models
+
+--- 
+
 Nedelja 3.
 Uživo: subota, 18. jun, 09:00 - 18:00, Startit centar, Beograd
 09:00 - 12:30. Kros-validacija i regularizacija klasifikacionih modela; selekcija klasifikacionih modela (ROC analiza).
