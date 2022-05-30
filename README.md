@@ -21,6 +21,7 @@ The Summer School will be hosted in [Startit Center Belgrade](https://startit.rs
 - Learning Material: 
    - [R for Data Science](https://r4ds.had.co.nz/)
    - [DataKolektiv's DATA SCIENCE SESSIONS: Session 01-08](http://datakolektiv.com/app_direct/introdsnontech/)
+   - [Introduction to Programming with R](https://discdown.org/rprogramming/index.html)
 - Review Material (Math):
    - [Khan Academy: Probability](https://www.khanacademy.org/math/statistics-probability/probability-library)
    - [Khan Academy: Random Variables](https://www.khanacademy.org/math/statistics-probability/random-variables-stats-library)
