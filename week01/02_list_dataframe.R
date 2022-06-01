@@ -11,8 +11,6 @@
 ### --- license: GPL-3.0 license
 ### --- https://www.gnu.org/licenses/gpl-3.0.html
 
-### ----------------------------------------------------------------------------
-
 # - where am i?
 getwd()
 # - note: always use RStudio projects!
