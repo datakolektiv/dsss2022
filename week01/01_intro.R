@@ -227,6 +227,25 @@ sum2 <- function(x, y) {
 sum2(10, 4)
 sum2(10, 1)
 
+# - more functions 
+a <- list(name = c("George", "Maria"),
+          age = c(48, 42))
+b <- list(name = c("Marko", "Nataša"),
+          age = c(51, 41))
+cmp_couples <- function(l1, l2) {
+  if (l1$age[1] > l2$age[1]) {
+    output1 <- paste0(l1$name[1], " is older than ", l2$name[1])
+  } else {
+    output1 <- paste0(l1$name[1], " is not older than ", l2$name[1])
+  }
+  if (l1$age[2] > l2$age[2]) {
+    output2 <- paste0(l1$name[2], " is older than ", l2$name[2])
+  } else {
+    output2 <- paste0(l1$name[2], " is not older than ", l2$name[2])
+  }
+  return(list(output1, output2))
+}
+
 
 
 

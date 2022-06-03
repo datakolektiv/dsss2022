@@ -170,18 +170,80 @@ ifelse(trues,
        print("No")
 )
 
-# - functionals
+### --- functional programming
+# - functionals in R
 
+# - lapply()
+cities <- c("Paris", "Rome", "NYC", "Moscow", "Tokyo")
+lapply(cities, function(x) {
+  return(
+    paste0("A big city: ", x)
+  )
+})
+big_cities <- lapply(cities, function(x) {
+  return(
+    paste0("A big city: ", x)
+  )
+})
+class(big_cities)
+big_cities <- unlist(big_cities)
+big_cities
 
+# - or use sapply() instead:
+sapply(cities, function(x) {
+  return(
+    paste0("A big city: ", x)
+  )
+})
+big_cities <- sapply(cities, function(x) {
+  return(
+    paste0("A big city: ", x)
+  )
+})
+class(big_cities)
+big_cities
+names(big_cities)
+big_cities <- unname(big_cities)
+big_cities
 
+# - mapply
+a <- 1:10
+b <- 11:20
+mapply("+", a, b)
 
+v1 <- c(1, 2, 3, 4, 5)
+v2 <- c(2, 4, 1, 2, 10)
+mapply(max, v1, v2)
 
+# - mapply() is to Map() what sapply() is to lapply()
+Map(max, v1, v2)
 
+# - apply, for matrices
+mat <- matrix(1:9, nrow = 3)
+print(mat)
+apply(mat, 1, sum)
+apply(mat, 2, sum)
 
+# - Reduce
+Reduce("+", 1:6)
+Reduce("+", 1:6, accumulate = TRUE)
 
-
-
-
+# - lapply() + Reduce()
+data_dir <- paste0(getwd(), "/_data/")
+lF <- list.files(data_dir)
+lF <- lF[grepl("data_chunk", lF)]
+lF
+# - read all with lapply():
+data <- lapply(lF, function(x) {
+  read.csv(paste0(data_dir, x), 
+           header = TRUE,
+           check.names = FALSE,
+           row.names = 1,
+           stringsAsFactors = FALSE)
+})
+data[[1]]
+data[[2]]
+dataset <- Reduce(rbind, data)
 
 
 
