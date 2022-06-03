@@ -21,8 +21,8 @@ In case of any problems during the installation of R and RStudio, get in touch w
 
 Essentially, there are two installation steps:
 
--install R (the programming language)
--install RStudio (your IDE, i.e. your working environment, where you write code, inspect data, etc.)
+- install R (the programming language)
+- install RStudio (your IDE, i.e. your working environment, where you write code, inspect data, etc.)
 
 - For Windows users: [Video Instructions](https://www.youtube.com/watch?v=9-RrkJQQYqY)
 - For Mac users: [Video Instructions](https://www.youtube.com/watch?v=Y20P3u3c_1c)
