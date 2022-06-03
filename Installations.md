@@ -41,10 +41,10 @@ For each new step that I make in Data Science, for each new project, my approach
 I start a new directory which bears the project name (NOTE. Avoid using empty spaces, " ", in naming your files and directories!);
 In that directory, I make three new directories:
 
-- _data - where I intend to keep the raw data,
-- _analytics - where I intend to keep the processed data,
-- _results - where I intend to keep the outputs of my work, and
-- _img - where I intend to keep any images that were produced in the course of my work in the project.
+- `_data` - where I intend to keep the raw data,
+- `_analytics` - where I intend to keep the processed data,
+- `_results` - where I intend to keep the outputs of my work, and
+- `_img` - where I intend to keep any images that were produced in the course of my work in the project.
 
 I suggest that, at least in the beginning, you use the same schema to organize your directories. Later on you can decide upon the exact form of organization that you find to be most suitable to you.
 
