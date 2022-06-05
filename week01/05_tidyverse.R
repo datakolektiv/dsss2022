@@ -24,11 +24,15 @@ con <- gzcon(url(data_url))
 txt <- readLines(con)
 data_set <- read.csv(textConnection(txt))
 
+str(data_set)
+
+glimpse(data_set)
+
 # - select
-data_subset <- select(data_set, 
-                      id, 
-                      name, 
-                      host_response_time)
+data_subset <- dplyr::select(data_set,
+                             id,
+                             name,
+                             host_response_time)
 table(data_subset$host_response_time)
 
 data_set$host_response_time[data_set$host_response_time=="N/A"] <- NA
@@ -41,15 +45,19 @@ table(data_subset$host_response_time)
 
 hrt_table <- as.data.frame(
   table(data_subset$host_response_time)
-  
 )
 
-data_subset <- select(data_set, 
-                      id, 
-                      name, 
-                      host_response_time)
-data_subset <- filter(data_subset,
-                      host_response_time == "within an hour")
+hrt_table <- as.data.frame(
+  table(data_set$host_response_time,
+        data_set$host_is_superhost)
+)
+
+data_subset <- dplyr::select(data_set,
+                             id,
+                             name,
+                             host_response_time)
+data_subset <- dplyr::filter(data_subset,
+                             host_response_time == "within an hour")
 data_subset$host_response_time <- NULL
 
 # pipe operator: %>% 

@@ -31,6 +31,7 @@ head(air_quality_data, 10)
 # let's load another one (a pure `.csv`)
 # - there is an in-built mtcars dataset, look:
 head(mtcars)
+head(iris)
 # - write.csv mtcars to our data_dir
 write.csv(mtcars, 
           paste0(data_dir, "mtcars.csv"))
@@ -57,11 +58,13 @@ for (i in 1:4) {
 }
 # - inspect
 data_sets[[1]]
+
 # - write all elements of data_sets as separate .csv files
 lapply(data_sets, function(x) {
   filename = paste0("data_chunk_", round(runif(1, 1, 100), 0), ".csv")
   write.csv(x, paste0(data_dir, "/", filename))
 })
+
 # read; first we need to recognize the files that we need
 lF <- list.files(data_dir)
 lF <- lF[grepl("data_chunk", lF)]
@@ -80,4 +83,13 @@ collect_set[[1]]
 # - put them together
 final_data_set <- Reduce(rbind, collect_set)
 head(final_data_set, 50)
+dim(final_data_set)
+
+library(data.table)
+
+fdf <- rbindlist(collect_set)
+
+collect_set[[1]]
+
+
 

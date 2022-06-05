@@ -16,10 +16,12 @@ data_dir <- paste0(getwd(), "/_data/")
 
 # - elementary, dear Watson:
 for (a in 1:10) print(a)
+
 # - code blocks
 for (i in 1:100) {
   print(sqrt(i))
 }
+
 # - function call in iterations
 cities <- c('NYC', 'Belgrade', 'Rome', 'Berlin')
 for (x in 1:length(cities)) {
@@ -92,6 +94,14 @@ while (counter <= 100) {
   }
 }
 
+a <- 1
+repeat {
+  a <- a + 1
+  print(a)
+  
+  if (a > 90) break
+}
+
 # - decisions
 num_rows <- dim(data_set)[1]
 if (num_rows >= 10000) {
@@ -128,7 +138,7 @@ if (this_number > 10) {
 }
 
 # - switch
-this_animal <- 'dog'
+this_animal <- "dog"
 switch(this_animal,
        "dog" = "It's a dog!",
        "elephant" = "It's an elephant!", 
@@ -169,6 +179,9 @@ ifelse(trues,
        print("Yes"),
        print("No")
 )
+
+rand_a <- runif(100, 0, 1)
+ifelse(rand_a > .5, TRUE, FALSE)
 
 ### --- functional programming
 # - functionals in R
@@ -221,8 +234,11 @@ Map(max, v1, v2)
 # - apply, for matrices
 mat <- matrix(1:9, nrow = 3)
 print(mat)
-apply(mat, 1, sum)
-apply(mat, 2, sum)
+apply(mat, 1, mean)
+apply(mat, 2, var)
+
+mat <- matrix(c(3, 1, 9, 3, 4, 1, 0, 0, 9), 
+              ncol = 3)
 
 # - Reduce
 Reduce("+", 1:6)
@@ -244,8 +260,3 @@ data <- lapply(lF, function(x) {
 data[[1]]
 data[[2]]
 dataset <- Reduce(rbind, data)
-
-
-
-
-
