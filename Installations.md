@@ -48,3 +48,9 @@ In that directory, I make three new directories:
 
 I suggest that, at least in the beginning, you use the same schema to organize your directories. Later on you can decide upon the exact form of organization that you find to be most suitable to you.
 
+**Working with RStudio projects**
+
+Seriously, all code should be kept under RStudio projects.
+
+This [video](https://www.youtube.com/watch?v=WyrJmJWgPiU) explains how to start and maintain a project under RStudio Dekstop. 
+
