@@ -1,0 +1,283 @@
+---
+title: "DSSS2022 Machine Learning in R: Task List 01"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+# Data visualization in ggplot2
+
+We will exercise our [ggplot2](https://ggplot2.tidyverse.org/) skills a bit here!
+
+You may rely on [R for Data Science](https://r4ds.had.co.nz/), chapter [2 Data visualization](https://r4ds.had.co.nz/data-visualisation.html) to complete this exercise.
+
+### ggplot2 in tidyverse
+
+Load `tidyverse`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+### The dataset
+
+We will use the same dataset as we have used in out [Task List 1]() for dplyr exercises:  [Our World in Data - COVID-19 Data Explorer](https://ourworldindata.org/explorers/coronavirus-data-explorer):
+
+- [Dataset GitHub repository](https://github.com/owid/covid-19-data/tree/master/public/data)
+- [Dataset CSV file](https://covid.ourworldindata.org/data/owid-covid-data.csv)
+
+based on: 
+
+> Mathieu, E., Ritchie, H., Ortiz-Ospina, E. et al. A global database of COVID-19 vaccinations. Nat Hum Behav (2021). https://doi.org/10.1038/s41562-021-01122-8.
+
+We can access the `CSV` file directly from R's `read.csv()`, as we have demonstrated in the classroom on Saturday, June 4:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+file_url <- "https://covid.ourworldindata.org/data/owid-covid-data.csv"
+data_set <- read.csv(file_url, 
+                     header = TRUE,
+                     check.names = FALSE,
+                     stringsAsFactors = FALSE)
+head(data_set)
+```
+
+Let's inspect the variables present here. **N.B.** A thorough description of the dataset is given in its [GitHub repo](https://github.com/owid/covid-19-data/tree/master/public/data).
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+glimpse(data_set)
+```
+
+Similarly as in our Task List 01, we need to remove everything where the `iso_code` begins with `^OWID_`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set <- data_set %>% 
+  filter(!str_detect(iso_code, "^OWID_"))
+```
+
+### Task 0.
+
+Essentially, you do nothing in Task 0: just follow me as I add successive layers to a simple ggplot2 visualization.
+I would like to visualize the number of cases per year. First I need a data.frame for this visualization:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set$year <- substr(data_set$date, 1, 4)
+plot_frame <- data_set %>% 
+  select(new_cases, year) %>% 
+  group_by(year) %>% 
+  summarise(cases = sum(new_cases, na.rm = TRUE))
+print(plot_frame)
+```
+Let's define the visualization mapping in `aes()` and plot nothing, for the beginning:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = year, y = cases))
+```
+
+Ok: ggplot2 recognizes my variables and their scales, but plots nothing. 
+I need to add some geoms there for plot to materialize:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = year, y = cases)) + 
+  geom_point(size = 1.5, color = "darkred") + 
+  geom_path(group = 1, size = .5, color = "darkred")
+```
+
+I could have added a different geom:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = year, y = cases)) + 
+  geom_bar(width = .5, stat = "identity", fill = "darkred", color = "black")
+```
+
+Now, what about `total_cases` per `month` and per `year`? I need a new `plot_frame` for this:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set$year <- substr(data_set$date, 1, 4)
+data_set$month <- as.character(substr(data_set$date, 6, 7))
+plot_frame <- data_set %>% 
+  select(total_cases, year, month) %>% 
+  group_by(year, month) %>% 
+  summarise(cases = sum(total_cases, na.rm = TRUE))
+print(plot_frame)
+```
+
+Now:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = month, 
+           y = cases,
+           fill = year, 
+           color = year)) + 
+  geom_bar(width = .5,
+           stat = "identity", 
+           position = position_dodge(width = 0.5))
+```
+
+Or I can do `facet_wrap`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = month, 
+           y = cases,
+           fill = year, 
+           color = year)) + 
+  geom_bar(width = .5,
+           stat = "identity") + 
+  facet_wrap(~year, nrow = 3)
+```
+
+Now I can begin using `theme()` in order to style my chart.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = month, 
+           y = cases,
+           fill = year, 
+           color = year)) + 
+  geom_bar(width = .5,
+           stat = "identity") + 
+  facet_wrap(~year, nrow = 3) + 
+  theme_bw() + 
+  theme(legend.position = "top")
+```
+
+Even better:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = month, 
+           y = cases,
+           fill = year, 
+           color = year)) + 
+  geom_bar(width = .5,
+           stat = "identity") + 
+  facet_wrap(~year, nrow = 3) + 
+  theme_bw() + 
+  theme(legend.position = "top") + 
+  theme(strip.background = element_rect(fill = "white", color = "white")) + 
+  theme(panel.border = element_blank())
+```
+
+If you want to avoid using the scientific notation on a scale (look at our y-axis), you can use the `scales` library:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# install.packages('scales')
+library(scales)
+ggplot(data = plot_frame, 
+       aes(x = month, 
+           y = cases,
+           fill = year, 
+           color = year)) + 
+  geom_bar(width = .5,
+           stat = "identity") + 
+  facet_wrap(~year, nrow = 3) + 
+  scale_y_continuous(labels = comma) + 
+  theme_bw() + 
+  theme(legend.position = "top") + 
+  theme(strip.background = element_rect(fill = "white", color = "white")) + 
+  theme(panel.border = element_blank())
+```
+
+Let's now produce a scatter plot of the 
+- mean number of `new_cases` per day, per country
+- and the country's population (taking the latest available data).
+
+Population first:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+population_set <- data_set %>% 
+  select(location, date, population) %>% 
+  arrange(location, date) %>% 
+  group_by(location) %>% 
+  slice_tail()
+population_set
+```
+
+Now, the average number of `total_cases` per country:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+cases_set <- data_set %>% 
+  select(location, new_cases) %>% 
+  group_by(location) %>% 
+  summarise(mean_cases_per_day = mean(new_cases, na.rm = TRUE))
+cases_set
+```
+
+Now I need to **join** `cases_set` to `population_set` by `locations`; if you are interested to learn about relational structures and join operations in `dplyr` in R, go read section [13 Relational data in R for Data Science](https://r4ds.had.co.nz/relational-data.html).
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+plot_frame <- left_join(population_set, 
+                        cases_set,
+                        by = "location")
+plot_frame
+```
+
+Here goes our scatter plot:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = population, y = mean_cases_per_day)) + 
+  geom_point(size = 1, color = "darkred") + 
+  geom_point(size = .75, color = "white") + 
+  scale_y_continuous(labels = comma) + 
+  scale_x_continuous(labels = comma) + 
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+Maybe using `log()` scales?
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = log(population), 
+           y = log(mean_cases_per_day))) + 
+  geom_point(size = 1, color = "darkred") + 
+  geom_point(size = .75, color = "white") + 
+  scale_y_continuous(labels = comma) + 
+  scale_x_continuous(labels = comma) + 
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+We can place the best fitting linear model on the chart by `geom_smooth(method="lm)`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = plot_frame, 
+       aes(x = log(population), 
+           y = log(mean_cases_per_day))) + 
+  geom_smooth(size = .25, method = "lm") + 
+  geom_point(size = 1, color = "darkred") + 
+  geom_point(size = .75, color = "white") + 
+  scale_y_continuous(labels = comma) + 
+  scale_x_continuous(labels = comma) + 
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+### Task 1.
+
+Reuse my code to produce a chart showing the
+
+- the total number of `new_cases` per `continent` and per `year`.
+
+### Task 2.
+
+Reuse my code to produce a scatter plot of:
+
+- the mean `gdp_per_capita` per country, and 
+- the country `population_density`.
+
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.
