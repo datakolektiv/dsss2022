@@ -1,0 +1,245 @@
+---
+title: "DSSS2022 Machine Learning in R: Task List 01"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+# Probability Functions in R
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+Time for serious things: probability functions in R. We will play with the [Binomial Distribution](https://en.wikipedia.org/wiki/Binomial_distribution) today, and review a very important concept in Estimation Theory: the Likelihood Function.
+
+### Binomial probability: tossing a coin
+
+Let's call a coin that lands heads and tails 50% of the time *a fair coin*.
+Toss a fair coin ten times and write down the outcomes as (H)ead or (T)ail:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+tosses <- c('H', 'H', 'T', 'T', 'H', 'T', 'T', 'H', 'T', 'T')
+table(tosses)
+```
+
+What is the probability of observing H - P(H) - and the probability of observing T - P(T) in this statistical experiment?
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+table(tosses)/length(tosses)
+```
+
+Now, the `sample()` function:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+tosses <- sample(c('H', 'T'), size = 10, replace = TRUE, prob = c(.5, .5))
+table(tosses)
+```
+
+**TO DO.** Open the documentation, or Google, and learn about the following R functions: `sample()`.
+
+Let's perform a ten thousands of statistical experiments: every time, we toss a fair coing 1000 times, and count the number of Heads and Tails.
+
+**TO DO.** Open the documentation, or Google, and learn about the following R functions: `t()` and `table()`.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+tosses <- lapply(1:10000, function(x) {
+  results <- table(
+    sample(c('H', 'T'), size = 100, replace = TRUE, prob = c(.5, .5))
+  )
+  results <- t(as.matrix(results))
+  results <- as.data.frame(results)
+  return(results)
+})
+tosses <- Reduce(rbind, tosses)
+head(tosses, 10)
+```
+
+Let's count how many times did we observe a particular number of Heads and visualize with ggplot2.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = tosses,
+       aes(x = H)) +
+  geom_histogram(bins = 50, stat = "count", fill = "black") + 
+  ggtitle("How many Heads)") +
+  theme_bw() + 
+  theme(panel.border = element_blank()) + 
+  theme(axis.text.x = element_text(angle = (90))) + 
+  theme(plot.title = element_text(hjust = .5))
+```
+
+And what if the coin was not fair and had a probability of landing Heads of .7?
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+tosses <- lapply(1:10000, function(x) {
+  results <- table(
+    sample(c('H', 'T'), size = 100, replace = TRUE, prob = c(.7, .3))
+  )
+  results <- t(as.matrix(results))
+  results <- as.data.frame(results)
+  return(results)
+})
+tosses <- Reduce(rbind, tosses)
+head(tosses, 10)
+ggplot(data = tosses,
+       aes(x = H)) +
+  geom_histogram(bins = 50, stat = "count", fill = "black") + 
+  ggtitle("How many Heads)") +
+  theme_bw() + 
+  theme(panel.border = element_blank()) + 
+  theme(axis.text.x = element_text(angle = (90))) + 
+  theme(plot.title = element_text(hjust = .5))
+```
+
+
+The probability of obtaining $k$ successes (conventionally: Heads) with probability $p$ from $n$ trials in a statistical experiment with two possible outcomes {H, T} is given by:
+
+$${P(X=k;n,k)} = {{n}\choose{k}}p^{k}(1-p)^{n-k}$$
+where 
+
+$${{n}\choose{k}} = \frac{n!}{k!(n-k)!}$$
+
+is the binomial coefficient.
+
+This probability function is called the Binomial Distribution.
+This is its official R documentation: [Binomial Distribution in R](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Binomial.html).
+
+### Probability in R: density, cumulative, random numbers, and quantile functions
+
+The Binomial density function is obtained from `dbinom()`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+d <- seq(0, 100, by = 1)
+y <- dbinom(x = d, size = 100, prob = .5)
+data.frame(x = d,
+           p = y) %>% 
+  ggplot(aes(x = x, y = p)) + 
+  geom_point() +
+  ggtitle('Binomial PMF') + 
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+The density function (for discrete probability functions like Binomial) answers the following question: what is the probability that we observe `x` successes ("Heads") in `size = 100` trials (tosses) if the probability of landing a success (a "Head") is `prob = .5`. In continuous probability functions (like the Normal Distribution) density tells a different story.
+
+The cumulative function is:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+d <- seq(0, 100, by = 1)
+y <- pbinom(q = d, size = 100, prob = .5)
+data.frame(q = d,
+           p = y) %>% 
+  ggplot(aes(x = q, y = p)) + 
+  ggtitle('Binomial CDF') + 
+  geom_point() + 
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+The cumulative function (or C.D.F.: the Cumulative Distribution Function) answers the following question: what is the probability that we observe a number of successes that is less or equal to `q` successes ("Heads") in `size = 100` trials (tosses) if the probability of landing a success (a "Head") is `prob = 0.5`.
+
+This is how we obtain Binomial random numbers:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+y <- rbinom(n = 100, size = 1, prob = .5)
+print(y)
+```
+
+We have used `rbinom()` to produce `n = 100` random coin tosses, on each occasion tossing a coin only once (`size = 1`) and with a probability of obtaining Heads of `prob = .5`.
+
+Here goes an array of one hundred statistical experiments in which we always toss a coin five times with `prob = .5` to obtain Heads:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+y <- rbinom(n = 100, size = 5, prob = .5)
+print(y)
+```
+
+Finally, the quantile function.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+qbinom(.5, size = 10, prob = .5)
+```
+
+It takes the probability value and gives a number whose cumulative value matches the probability value, so we have asked: in a statistical experiment where we toss a coin `size = 10` times, with probability of obtaining Heads `prob = .5`, how many results are found under `.5` of the results? It is an inverse of the cumulative function:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+qbinom(.75, size = 10, prob = .5)
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+qbinom(.5, size = 10, prob = .75)
+```
+
+**NOTE.** In R, you will always find four probability function for any given statistical distribution. For example, we have `dbinom()` for density, `pbinom()` for cumulative function, `qbinom()` for inverse cumulative function, and `rbinom()` for Binomial random numbers; similarly, for the Poisson distribution we have `dpois()`, `ppois()`, `qpois()`, and `rpois()`.
+
+### Binomial Likelihood
+
+Imagine we toss a fair coin with $p_H = .5$ twice and observe two Heads.The probability of observing two heads with $p_H = .5$ is:
+
+$$P(HH|p_H = .5) = .5 * .5 = .5^{2} = .25$$
+
+Now take a look at the following function: $P(HH|p_H)$. Imagine that the data, the results of our observations - that we have seen two heads in a row - are *fixed*. Than $P(HH|p_H)$ is *a function of the parameter* $p_H$. Imagine that we start changing the value of $p_H$ while keeping the data fixed and with every change in parameter we compute the value of $P(HH|p_H)$ again and again. For example, what is the value of $P(HH|p_H)$ if $p_H = .3$?
+
+$$P(HH|p_H = .3) = .3 * .3 = .3^{2} = .09$$
+
+And what if $p_H = .9$?
+
+$$P(HH|p_H = .9) = .9 * .9 = .9^{2} = .81$$
+
+We have observed two heads; in the universe of our small statistical experiment we have actually observed *all heads*, right? So, as we increase the value of $p_H$, the value of $P(HH|p_H)$ tends to increase: it was `.09` when $p_H = .3$, then `.25` for $p_H = .5$, and finally `.81` for $p_H = .9$. Even if we already know that the coin is fair - hence $p_H = .5$ - the *observed data inform us* that it is more *likely* to be higher.
+
+$P(HH|p_H)$, also written as $\mathcal{L}(p_H|HH)$, reads: the **likelihood** of the parameter value $p_H$ *given* the data $HH$. We can plot the whole **Likelihood function** for this experiment easily:
+
+```{r echo = T, message = F}
+likelihood <- data.frame(parameter = seq(.01, .99, by = .01))
+likelihood$likelihood <- likelihood$parameter^2
+
+ggplot(likelihood, 
+       aes(x = parameter, 
+           y = likelihood)) + 
+  geom_smooth(size = .25, se = F) + 
+  ggtitle("Likelihood function for HH") +
+  theme_bw() + 
+  theme(panel.border = element_blank()) + 
+  theme(plot.title = element_text(hjust = .5))
+```
+
+What if we have observed $HHTTH$ in five tosses?
+
+```{r echo = T, message = F}
+likelihood <- data.frame(parameter = seq(.01, .99, by = .01))
+
+likelihood$likelihood <- 
+  likelihood$parameter^2 * (1-likelihood$parameter)^2 * likelihood$parameter
+
+ggplot(likelihood, 
+       aes(x = parameter, 
+           y = likelihood)) + 
+  geom_smooth(size = .25, se = F) + 
+  ggtitle("Likelihood function for HHTTH") +
+  theme_bw() + 
+  theme(panel.border = element_blank()) + 
+  theme(plot.title = element_text(hjust = .5))
+```
+
+How did we get to it? Look, if the data are $HHTTH$, then the Likelihood function for $p_H = .2$ must be:
+
+$$P(HHTTH|p_H = .2) = .2 * .2 * (1-.2) * (1-.2) * .2 = .2^{2} *  (1-.2)^{2} * .2 = .00512$$
+
+Let's check in R:
+
+```{r echo = T}
+.2^2*(1-.2)^2*.2
+```
+
+And now we just need to compute the Likelihood function across the whole domain of $p_H$. As simple as that!
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.
