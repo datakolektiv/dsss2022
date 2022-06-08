@@ -1,0 +1,356 @@
+---
+title: "DSSS2022 Machine Learning in R: Task List 04"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+# The Method of Least Squares
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+data_dir <- paste0(getwd(), "/_data/")
+```
+
+### Task 00
+
+Read through carefully everything that follows. In the bottom of the Notebook you will find Task 01 and this is the only "real" task for you here (i.e. where you will need to write some code). Make sure that Google for each new R function in this Task List and learn how to use it. This Task List is about undertanding things - similar to Task List 03 on Binomial Probability and Likelihood. 
+
+
+### Simple Linear Regression
+
+Please download the following dataset: [Medical Cost Personal Datasets](https://www.kaggle.com/datasets/mirichoi0218/insurance) into your `_data` directory. You will need to register or sign in with Google (or otherwise) to [Kaggle](https://www.kaggle.com/) to be able to obtain the dataset. The dataset is a `.zip` archive, decompress it and you fill find the `insurance.csv` file there.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set <- read.csv(paste0(data_dir, "insurance.csv"), 
+                     header = TRUE,
+                     check.names = FALSE,
+                     stringsAsFactors = FALSE)
+print(data_set)
+```
+
+Let's inspect the data:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+glimpse(data_set)
+```
+
+The task here is to use all variables in the dataset to predict the `charges`. However, we will focus on the relationship between two variables only at this point: `bmi` (the BMI: Body Mass Index) and `charges`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set <- data_set %>% 
+  select(bmi, charges)
+```
+
+Let's ggplot2 it:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = data_set, 
+       aes(x = bmi,
+           y = charges)
+       ) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE, size = .25) +
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+Not good, obviously. Let's check the correlation between `bmi` and `charges`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+cor.test(data_set$bmi,
+         data_set$charges)
+```
+
+The correlation is statistically significant (i.e. does not seem to equal 0 in the population), but low (around .2 only). 
+
+However: ggplot2 has somehow found a way to draw the optimal linear regression line for this dataset (we asked for it in: `geom_smooth(method = "lm", se = FALSE, size = .25) +`). How?
+
+#### How to find optimal regression lines?
+
+First, let see what defines a line in a plane:
+
+$$y = \beta_0 + \beta_1x$$
+
+Where $\beta_0$ is the intercept of the line (the place where it intersects the y-axis) and $\beta_1$ is its slope (controls the angle by which the line intersects the axis).
+
+Let's produce a dataset of two correlated variables with an approximate linear relationship: `line_set`.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+beta_0 = 32
+beta_1 = 46
+error = 150
+x <- seq(0, 100, by = 1)
+y = beta_0 + beta_1*x + rnorm(length(x), 0, error)
+line_set <- data.frame(x, y)
+ggplot(data = line_set, 
+       aes(x = x,
+           y = y)
+       ) + 
+  geom_point(size = 1, color = "black") +
+  geom_point(size = .75, color = "white") + 
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+I will now place a (a) new line, of an arbitrary intercept and slope across the points, and (b) the optimal regression line for the data using `geom_smooth()`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# - data parameters
+beta_0 = 32
+beta_1 = 46
+error = 150
+x <- seq(0, 100, by = 1)
+y = beta_0 + beta_1*x + rnorm(length(x), 0, error)
+line_set_data <- data.frame(x, y)
+line_set_data$type = "data"
+
+# - arbitrary line
+model_beta_0 = 29
+model_beta_1 = 35
+x <- seq(0, 100, by = 1)
+y = model_beta_0 + model_beta_1*x
+line_set_model <- data.frame(x, y)
+line_set_model$type <- "model"
+
+# - plot dataset
+line_set <- rbind(line_set_data,
+                  line_set_model)
+
+# - plot
+ggplot(data = line_set, 
+       aes(x = x,
+           y = y, 
+           fill = type,
+           color = type)
+       ) + 
+  geom_point(size = .1) + 
+  geom_smooth(method = "lm", size = .25, se = FALSE) + 
+  scale_colour_manual(values = c("red", "darkorange")) +
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+The red line describes the relationship between $x$ and $y$ the best, and we know that its parameters must be close to $\beta_0=32$ and $\beta_1=46$:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+linear_model <- lm(y ~ x, data = line_set_data)
+print(coefficients(linear_model))
+print(cor.test(line_set_data$x, line_set_data$y))
+```
+
+Well, the model got the slope almost right, but the estimate of the intercept is so-so...
+
+However, the orange line, the arbitrary one, of course is not the optimal one. How do we find an optimal line - what $\beta_0$ and $\beta_1$ define it?
+
+**Idea A: pick a set of random $\beta_0$, $\beta_1$, find the line that falls closest to the optimal**
+
+Let's see:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+lines = vector(mode = "list", length = 10)
+lines <- lapply(1:length(lines), function(z) {
+  beta_0 <- runif(1, 0, 100)
+  beta_1 <- runif(1, 0, 100)
+  x <- seq(0, 100, by = 1)
+  y <- beta_0 + beta_1*x
+  ld <- data.frame(x = x, 
+                   y = y,
+                   line = "random",
+                   model = paste0("model_", z))
+  return(ld)
+})
+lines_set <- Reduce(rbind, lines)
+print(lines_set)
+```
+
+Now we will produce the data once again:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# - data parameters
+beta_0 = 32
+beta_1 = 46
+error = 150
+x <- seq(0, 100, by = 1)
+y = beta_0 + beta_1*x + rnorm(length(x), 0, error)
+line_set_data <- data.frame(x, y)
+line_set_data$line = "optimal"
+line_set_data$model = "optimal"
+print(line_set_data)
+```
+
+Now we put `line_sets` and `line_set_data` together and plot:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+line_frame <- rbind(line_set_data, 
+                    lines_set)
+# - plot
+ggplot(data = line_frame, 
+       aes(x = x,
+           y = y, 
+           fill = line,
+           color = line, 
+           group = model)
+       ) + 
+  geom_point(size = .75) + 
+  geom_smooth(method = "lm", size = .25, se = FALSE) +
+  scale_colour_manual(values = c("red", "darkorange")) +
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+How do we tell the best, optimal regression line from any random line in the plane?
+
+#### Residuals and Sum of Squares Error (SSE)
+
+Look at the scatter of points from the optimal regression line:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+lin_fit <- lm(data = line_set_data,
+              y ~ x)
+line_set_data$predicted <- lin_fit$fitted.values
+line_set_data$residuals <- lin_fit$residuals
+ggplot(data = line_set_data,
+       aes(x = x, y = y)) +
+  geom_smooth(method = lm, se = F, color = "red", size = .25) +
+  geom_segment(aes(x = x, 
+                   y = predicted, 
+                   xend = x, 
+                   yend = predicted + residuals),
+               color = "black", size = .2, linetype = "dashed") +
+  geom_point(aes(x = x, y = y), color = "black", size = 1) +
+  geom_point(aes(x = x, y = y), color = "white", size = .5) +
+  geom_point(aes(x = x, y = predicted), color = "red", size = 1) +
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+The vertical distance between (a) the empirical data point, and (b) the point on the line that says where the empirical point should be in case the relationship was modeled perfectly is called a *residual*. Residuals measure the model error: obviously, best-fitting regression lines **minimize the sum of squared residuals:**
+
+$$SSE = \sum_{i=1}^{i=n}{(y_i-\hat{y}_i)^2}$$
+where $n$ is the number of data points, `i` is an index across all data points, $\hat{y}_i$ is the model prediction (the red points on the optimal regression line) for point $i$, $y_i$ is the empirical value for $y$ for point $i$. All other (non-optimal) lines have an $SSE$ lower than the optimal regression line. A single $y_i-\hat{y}_i$ values is called the residual of data point $i$. In Linear Regression, only one combination of $\beta_0$ and $\beta_1$ produces a line that minimizes the $SSE$ for a given dataset.
+
+### Optimizing Simple Linear Regression
+
+Let's inspect the in-built `iris` dataset:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+head(iris)
+```
+
+Now let's grab `Sepal.Length` and `Petal.Length` from `iris` and use them as our `x` and `y` in regression:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+iris_data <- data.frame(x = iris$Sepal.Length,
+                        y = iris$Petal.Length)
+lin_fit <- lm(data = iris_data,
+              y ~ x)
+iris_data$predicted <- lin_fit$fitted.values
+iris_data$residuals <- lin_fit$residuals
+ggplot(data = iris_data,
+       aes(x = x, y = y)) +
+  geom_smooth(method = lm, se = F, color = "red", size = .25) +
+  geom_segment(aes(x = x, 
+                   y = predicted, 
+                   xend = x, 
+                   yend = predicted + residuals),
+               color = "black", size = .2, linetype = "dashed") +
+  geom_point(aes(x = x, y = y), color = "black", size = 1) +
+  geom_point(aes(x = x, y = y), color = "white", size = .5) +
+  geom_point(aes(x = x, y = predicted), color = "red", size = 1) +
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+Now we write an R function that takes as input:
+- a dataset, encompassing `x` and `y`
+- a set of parameters for the simple linear regression model: $\beta_0$ and $\beta_1$,
+- and returns the $SSE$ for the given parameters and the dataset.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+sse <- function(params) {
+  beta_0 <- params[1]
+  beta_1 <- params[2]
+  y_hat <- beta_0 + beta_1 * iris_data$x
+  res <- sum((iris_data$y - y_hat)^2)
+  sse = sum(res)
+  return(sse)
+}
+```
+
+Let's now try out our `sse()` function for different values of `beta_0` and `beta_1` on `iris_data`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+prms <- c(43, 2)
+sse(params = prms)
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+prms <- c(-7.101443, 1.858433)
+sse(params = prms)
+```
+
+Ok: we know that the optimal regression line for `iris_data` must be the one with the **minimal $SSE**. So, `sse()` that we wrote is a function, and as a function it has a minimum somewhere, right? What if we could have *a function that looks for a minimum of another function*? A function that would take our `sse()` as an argument, and return the combination of $\beta_0$ and $\beta_1$ that minimizes it? Well, we do have such functions: enter **optimization functions** in R. 
+
+What happens next:
+
+- we first pick some random starting values for $\beta_0$ and $\beta_1$ (in `beta_0_start <- runif(1, -10, 10)` and `beta_1_start <- runif(1, -10, 10)`),
+- then we call the R's optimization function `optim()` that can find a minimum of another function provided the starting values of its parameters ($\beta_0$ and $\beta_1$ in our case) (in `par = c(beta_0_start, beta_1_start)`),
+- we use the famous Nelder-Mead optimization method (in `method = "Nelder-Mead"`),
+- we pass our `sse()` function as an argument to the optimizer (in `fn = sse`),
+- we set no limits on the possible values of the parameters (in `lower = -Inf, upper = Inf`),
+- and pick-up the resulting values of $\beta_0$ and $\beta_1$ from `solution$par`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+beta_0_start <- runif(1, -10, 10)
+beta_1_start <- runif(1, -10, 10)
+solution <- optim(par = c(beta_0_start, beta_1_start), 
+                  fn = sse, 
+                  method = "Nelder-Mead",
+                  lower = -Inf, upper = Inf)
+print(paste0("Optimal parameter values: ", paste(round(solution$par, 2), collapse = ", ")))
+print(paste0("SSE: ", solution$value))
+```
+
+Let's check this result from R's function `lm()` that fits linear models:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+linear_model <- lm(y ~ x, data = iris_data)
+print(coefficients(linear_model))
+print(sum(linear_model$residuals^2))
+```
+
+**N.B. Statistical Learning = Error Minimization. No error signal - no learning.**
+
+### Task 01
+
+Do the same as I did from `iris_data` with the `insurance.csv` dataset, using `bmi` as predictor and `charges` as a an outcome (dependent) variable:
+
+- write out an `sse()` function that works for this data
+- optimize `sse()` with `optim()` in the same way I did for `iris_data`
+- check with `lm()` if the result is close to the optimal values that it finds.
+
+Do not pay attention to my `ggplot2` code, all you need to complete the task is found here:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+sse <- function(params) {
+  beta_0 <- params[1]
+  beta_1 <- params[2]
+  y_hat <- beta_0 + beta_1 * iris_data$x
+  res <- sum((iris_data$y - y_hat)^2)
+  sse = sum(res)
+  return(sse)
+}
+```
+
+and in the lines immediately following this code chunk (essentially, you just need to change `iris_data` to something else in `sse()` and experiment with `optim()`).
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.
