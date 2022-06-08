@@ -299,7 +299,7 @@ Population first:
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 population_set <- data_set %>% 
-  select(location, date, population) %>% 
+  select(location, date, population_density) %>% 
   arrange(location, date) %>% 
   group_by(location) %>% 
   slice_tail()
@@ -341,7 +341,7 @@ And plot:
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 ggplot(data = plot_frame, 
-       aes(x = population, y = mean_gdp)) + 
+       aes(x = population_density, y = mean_gdp)) + 
   geom_point(size = 1, color = "blue") + 
   geom_point(size = .75, color = "blue") + 
   scale_y_continuous(labels = comma) + 
@@ -354,7 +354,7 @@ Log scaling?
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 ggplot(data = plot_frame, 
-       aes(x = log(population), y = log(mean_gdp))) + 
+       aes(x = log(population_density), y = log(mean_gdp))) + 
   geom_point(size = 1, color = "blue") + 
   geom_point(size = .75, color = "blue") + 
   scale_y_continuous(labels = comma) + 
