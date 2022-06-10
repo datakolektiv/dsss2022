@@ -160,6 +160,8 @@ binomial_linear_model <- glm(Churn ~ .,
 exp(binomial_linear_model$coefficients)
 binomial_linear_model$aic
 
+### --- ROC for the full model
+
 # - decision criterion
 dec_criterion <- seq(.01, .99, by = .01)
 predictions <- predict(binomial_linear_model, 
