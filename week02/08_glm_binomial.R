@@ -7,7 +7,7 @@
 ### --- DataKolektiv, Chief Scientist/Owner
 ### --- DataKolektiv, 2022.
 ### --- script: 08_glm_binomial.R
-### --- description: Linear and Multiple Linear Regression
+### --- description: GLMs: Binomial Logistic Regressions
 ### --- with lm() in R.ss
 ### --- license: GPL-3.0 license
 ### --- https://www.gnu.org/licenses/gpl-3.0.html
