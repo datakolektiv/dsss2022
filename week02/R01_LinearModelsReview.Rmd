@@ -1,0 +1,88 @@
+---
+title: "DSSS2022 Machine Learning in R: Review of Linear Models"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+The most concise review of Linear and Generalized Linear Models ever.
+
+### Simple Linear Regression
+
+$$Y = \beta_0 + \beta_1X_1 + \epsilon $$
+
+The model error term $\epsilon$ is normally distributed, and we find the optimal values of $\beta_0$ (intercept) and $\beta_1$ (slope) by minimizing the $SSE$. The intercept is the predicted value of $Y$ when $X=0$ (i.e. where the regression line intersects the vertical, y-axis), while the slope tells us what increment in $Y$ follows a unit increment in $X$.
+
+### Multiple Linear Regression
+
+$$Y = \beta_0 + \beta_1X_1 + \beta_2X_2 + ... \beta_kX_k + \epsilon $$
+
+The model error term $\epsilon$ is normally distributed, and we find the optimal values of $\beta_0$ (constant) and $\beta_i$ for $i=1,2,..k$ (coefficients) by minimizing the $SSE$. The model coefficient $\beta_i$ tells us what increment in $Y$ follows a unit increment in $X_i$ given that the values of all other predictors is kept constant.
+
+### Binomial Logistic Regression
+
+The task is to predict whether the outcomes falls in $C_0$ or $C_1$ - a binary classification problem.
+
+Begin by defining odds as:
+
+$$odds = \frac{p_1}{1-p_1}$$
+
+Then consider the log-odds and assume that we want to model the log-odds in favor of category $C_1$ by a linear relationship of the form:
+
+$$log \left( \frac{p_1}{1-p_1} \right) = b_0 + b_1X_1 + b_2X_2 + ... + b_kX_k$$
+
+it turns out that we can recover the odds by taking the *exponent* of both LHS and RHS:
+
+$$\frac{p_1}{1-p_1} = e^{(b_0 + b_1X_1 + b_2X_2 + ... + b_kX_k)}$$
+
+Solving for $p_1$ be obtain:
+
+$$P(Y) = p_1 = \frac{1}{1+e^{-(b_0 + b_1X_1 + b_2X_2 + ... + b_kX_k)}}$$
+
+The model is optimized by MLE (Maximum Likelihood Estimation), and the interpretation of the model coefficients is the following:
+
+- for a given predictor $X_i$, the exponential of its coefficient, $e^{\beta_i}$ tells us
+- about the change $\Delta_{odds}$, where $\Delta_{odds}$ is the difference between $\frac{p_1}{1-p_1}$ *following* a unit increase in $X_i$ and before it - given that everything else is kept constant.
+
+### Multinomial Regression
+
+Consider a multiclass problem: categorize each instance correctly as a member of $C_0$, $C_1$, $C_2$.., $C_M$ ($M$ categories). Pick one of the outcome categories as your baseline, let's say $C_M$.
+
+Now consider a set of $M-1$ independent Binary Logistic Models with only one predictor $X_1$ where the baseline category is now referred to as $M$:
+
+$$log\frac{P(Y=C_1)}{P(Y=M)} = \beta_{0, c=C_1} + \beta_{1, c=C_1}X_1$$
+$$log\frac{P(Y=C_2)}{P(Y=M)} = \beta_{0, c=C_2} +\beta_{1, c=C_2}X_1$$
+$$log\frac{P(Y=M-1)}{P(Y=M)} = \beta_{0, c=C_{M-1}} + \beta_{1,c=C_{M-1}}X_1$$
+That means that for each category $C_1%$, $C_2$,.., $C_{M-1}$ we would obtain an intercept $\beta_{0,c=C_i}$ and a coefficient for one single predictor $X_1$, $\beta_{1, c=C_i}$: the coefficients would be relative to categories $i = 1, 2,.., M-1$, with $M$, again, serving as a baseline.
+
+Now we exponentiate each of the above equations to arrive at:
+
+$$\frac{P(Y=C_1)}{P(Y=M)} = e^{\beta_{0, c={C_1}} + \beta_{1, c={C_1}}X_1}$$
+$$\frac{P(Y=C_2)}{P(Y=M)} = e^{\beta_{0, c={C_2}} + \beta_{1, c={C_1}}X_2}$$
+
+$$\frac{P(Y=M-1)}{P(Y=M)} = e^{\beta_{0, c={c_M-1}} + \beta_{1, c=C_{M-1}}X_2}$$
+
+Follows:
+
+$$P(Y=C_1) = P(Y=M)e^{\beta_{0, c={C_1}} + \beta_{1, c={C_1}}X_1}$$
+
+$$P(Y=C_2) = P(Y=M)e^{\beta_{0, i={C_2}} + \beta_{1, c={C_2}}X_1}$$
+
+$$P(Y=M-1) = P(Y=M-1)e^{\beta_{0, c={C_{M-1}}} + \beta_{1, c={C_{M-1}}}X_1}$$
+
+and from the fact that all probabilities $P(Y=C_1), P(Y=C_2), .., P(Y= C_{M-1})$ must sum to one it can be shown that the probability of 
+
+$$P(Y = i) = \frac{e^{\beta_{0, c=C_i}+\beta_{1, c=C_i}X}}{1+\sum_{m=1}^{M-1}e^{\beta_{0, c=C_m}+\beta_{1, c=C_m}X}}$$
+
+The model is estimated by MLE (Maximum Likelihood Estimation). For each category $m$ - except for the baseline $M$, of course - we obtain a set of coefficients. Each model coefficient, in each category, tells us about the $\Delta_{odds}$ in favor of the target category, for a unit change of a predictor, in comparison with the baseline category, and given that everything else is kept constant.
+
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.
