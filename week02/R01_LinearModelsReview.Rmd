@@ -71,7 +71,7 @@ $$P(Y=C_2) = P(Y=M)e^{\beta_{0, i={C_2}} + \beta_{1, c={C_2}}X_1}$$
 
 $$P(Y=M-1) = P(Y=M-1)e^{\beta_{0, c={C_{M-1}}} + \beta_{1, c={C_{M-1}}}X_1}$$
 
-and from the fact that all probabilities $P(Y=C_1), P(Y=C_2), .., P(Y= C_{M-1})$ must sum to one it can be shown that the probability of 
+and from the fact that all probabilities $P(Y=C_1), P(Y=C_2), .., P(Y= C_M)$ must sum to one it can be shown that the probability of 
 
 $$P(Y = i) = \frac{e^{\beta_{0, c=C_i}+\beta_{1, c=C_i}X}}{1+\sum_{m=1}^{M-1}e^{\beta_{0, c=C_m}+\beta_{1, c=C_m}X}}$$
 
