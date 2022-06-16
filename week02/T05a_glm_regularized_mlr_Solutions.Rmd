@@ -1,0 +1,194 @@
+---
+title: "DSSS2022 Machine Learning in R: Task List 05"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+# Regularized Multiple Linear Regression
+
+You will need to install the `glmnet` package for this exercise: `install.packages("glmnet")`
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(glmnet)
+library(car)
+data_dir <- paste0(getwd(), "/_data/")
+```
+
+### Task 00
+
+Read through carefully everything that follows. In the bottom of the Notebook you will find Task 01 and this is the only "real" task for you here (i.e. where you will need to write some code). Make sure that Google for each new R function in this Task List and learn how to use it.
+
+The following vignette might prove to be useful here: [An Introduction to glmnet](https://glmnet.stanford.edu/articles/glmnet.html).
+
+
+### Multiple Linear Regression with `glmnet`
+
+We will use the `kc_house_data.csv` dataset. It is available on Kaggle: [Multiple Linear Regression: House Sales in King County, USA](https://www.kaggle.com/code/divan0/multiple-linear-regression/data). The task here is to predict the pricing of a property.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set <- read.csv(paste0(data_dir, "kc_house_data.csv"), 
+                     header = TRUE,
+                     check.names = FALSE,
+                     stringsAsFactors = FALSE)
+head(data_set)
+```
+
+Let's inspect the data:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+glimpse(data_set)
+```
+For reasons of simplicity, we will keep only some variables in the dataset:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+model_set <- data_set %>% 
+  select(-all_of(c("id", "lat", "long", "date",
+                   "zipcode", "yr_renovated", "waterfront", 
+                   "view", "sqft_basement")))
+```
+
+The correlations of predictors:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+cor_frame <- model_set %>% 
+  select(-price)
+cor(cor_frame)
+```
+Perform a multiple linear regression with `lm()`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+mlr <- lm(price ~ ., 
+          data = model_set)
+summary(mlr)
+```
+Check the Variance Inflation Factors:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+car::vif(mlr)
+```
+
+Now we will use `glmnet` to perform a *regularized* Multiple Linear Regression. We will use the LASSO Regression approach. You did find some time to introduce yourselves to the Ridge Regression approach ([review1](https://www.youtube.com/watch?v=Q81RR3yKn30) in the **Week02** section in the [DSSS2022 repository](https://github.com/datakolektiv/dsss2022)), didn't you? 
+
+Some familiarity with the `glmnet` terminology is needed here too:
+
+> "The elastic net penalty is controlled by $\alpha$, and bridges the gap between lasso regression ($\alpha=1$, the default) and ridge regression ($\alpha=0$). The tuning parameter $\lambda$ controls the overall strength of the penalty." From: [An Introduction to glmnet](https://glmnet.stanford.edu/articles/glmnet.html) 
+
+That means that we obtain Ridge Regression from `glmnet()` by setting $\alpha=0$ and potentially cross-validating across $\lambda$ - the penalty strength. We will skip the cross-validations step for now; `glmnet()` automatically searches across a range of $\lambda$ values anyways (which **does not mean** that we should not use cross-validation in general).
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+X <- model_set %>% select(-price)
+y <- model_set$price
+glmnet_mlr <- glmnet(x = X, y = y, 
+                     alpha = 1, 
+                     family = "gaussian")
+plot(glmnet_mlr, label = TRUE)
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+plot(glmnet_mlr, label = TRUE, xvar = "lambda")
+```
+
+How to interpret the plot above?
+
+- The axis below shows how the $L1$ norm - which is the $LASSO$ regression norm - evolves as $\lambda$ increases (the $L1$ norm, as you can see, increases from left to right: it represents the overall penalization present in the model);
+- The axis above presents the number of non-zero coefficients (predictors) present at the respective level of the $L1$ norm; it is constant (11) in our case since we have chosen to perform LASSO Regression ($\alpha=0$);
+- Each curve represents a predictor and the y-axis represents the respective coefficient value evolving with increased model penalization on the horizontal axis.
+
+Once again, the $L1$ norm is the $LASSO$ regression penalization:
+
+$$\lambda*(|\beta_1|+|\beta_2|+...+|\beta_k|)$$
+
+where $k$ is how many predictors we have in the model; on the other hand, the $L2$ norm (the Ridge Regression norm):
+
+$$\lambda*(\beta_1^2+\beta_2^2+...+\beta_k^2)$$
+We can obtain the range of $\lambda$ values that were tried out in model optimization:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+glmnet_mlr$lambda
+```
+
+And the obtain the deviance (i.e. $-2LL$) of each model:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+deviance(glmnet_mlr)
+```
+
+So the best model - *without cross-validation across $\lambda$* - would be:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+w_best <- which.min(deviance(glmnet_mlr))
+print(w_best)
+```
+
+And we can find out at what $\lambda$ value was this model found:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+best_lambda <- glmnet_mlr$lambda[w_best]
+print(best_lambda)
+```
+
+Then, to estimate the best found LASSO Regression model - without cross-validation across $\lambda$ yet - we need to:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+X <- model_set %>% select(-price)
+y <- model_set$price
+glmnet_mlr_best <- glmnet(x = X, y = y,
+                          alpha = 1,
+                          lambda = best_lambda,
+                          family = "gaussian")
+```
+
+And the coefficients in this model would be:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+coeffs <- as.data.frame(as.matrix(coefficients(glmnet_mlr_best)))
+print(coeffs)
+```
+
+**Look ahead.** Cross-validation across $\lambda$:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+glmnet_mlr_cv <- cv.glmnet(x = as.matrix(X), y = y,
+                           alpha = 1,
+                           family = "gaussian")
+plot(glmnet_mlr_cv)
+```
+
+The best performing value of $\lambda$ in cross-validation is found at:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+glmnet_mlr_cv$lambda.min
+```
+
+Then:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+glmnet_mlr_best <- glmnet(x = X, y = y,
+                          alpha = 1,
+                          lambda = glmnet_mlr_cv$lambda.min,
+                          family = "gaussian")
+coeffs <- as.data.frame(as.matrix(coefficients(glmnet_mlr_best)))
+print(coeffs)
+```
+
+The $R^2$ for this model is:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+predictions <- predict(glmnet_mlr_cv, 
+                       newx = as.matrix(X), 
+                       s = glmnet_mlr_cv$lambda.min)
+r2 <- as.numeric(cor(predictions, y)^2)
+print(r2)
+```
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.

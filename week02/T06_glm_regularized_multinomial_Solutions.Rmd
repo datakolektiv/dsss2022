@@ -1,0 +1,172 @@
+---
+title: "DSSS2022 Machine Learning in R: Task List 06"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+# Regularized GLMs
+
+Again we will be using the `glmnet` package: `install.packages("glmnet")`
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(glmnet)
+library(car)
+data_dir <- paste0(getwd(), "/_data/")
+```
+
+### Task 01
+
+We will now work on a rather well-know multiclass (or regression) problem represented by the [wine-quality(https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/) dataset in the [UCI Machine Learning repository](https://archive.ics.uci.edu/ml/index.php). You will need to access the red wine quality dataset (`winequality-red.csv`).
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set <- read.csv(paste0(data_dir, "winequality-red.csv"), 
+                     header = TRUE,
+                     sep = ";",
+                     check.names = FALSE,
+                     stringsAsFactors = FALSE)
+head(data_set)
+```
+
+The goal of the exercise is to train a regularized Multinomial Regression model to predict the quality class:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set$quality <- factor(data_set$quality, 
+                           levels = c(3, 4, 5, 6, 7, 8))
+table(data_set$quality)
+```
+
+To specify a Multinomial Regression model in `glmnet`, you will need to use: `family="multinomial"`.
+
+Please perform both LASSO (alpha = 1, which is the `glmnet` default) and Ridge (alpha = 0) regressions.
+
+Compare the results and make sure that you understand the interpretation of regression coefficients in Multinomial Regression. Why does `plot(glmnet_mnr, label = TRUE)` return several plots? 
+
+#### LASSO
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+X <- data_set %>% select(-quality)
+y <- data_set$quality
+glmnet_mnr <- glmnet(x = X, y = y, 
+                     alpha = 1, 
+                     family = "multinomial")
+plot(glmnet_mnr, label = TRUE)
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+plot(glmnet_mnr, label = TRUE, xvar = "lambda")
+```
+
+The $\lambda$ value of the best model found **without CV**:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+w_best <- which.min(deviance(glmnet_mnr))
+best_lambda <- glmnet_mnr$lambda[w_best]
+print(best_lambda)
+```
+
+Re-fit the best model:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+glmnet_mnr_best <- glmnet(x = X, y = y,
+                          alpha = 1,
+                          lambda = best_lambda,
+                          family = "multinomial")
+```
+
+Coefficients (carefully - we have a set of coefficients for each class):
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+class(coefficients(glmnet_mnr_best))
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+length(coefficients(glmnet_mnr_best))
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+as.data.frame(as.matrix(coefficients(glmnet_mnr_best)[[1]]))
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+as.data.frame(as.matrix(coefficients(glmnet_mnr_best)[[2]]))
+```
+
+Predictions:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+predictions <- predict(glmnet_mnr, 
+                       newx = as.matrix(X), 
+                       s = best_lambda,
+                       type = "class")
+predictions <- as.data.frame(predictions)
+colnames(predictions) <- "quality"
+```
+
+Model accuracy:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+acc <- sum(data_set$quality == predictions$quality)/length(data_set$quality)
+print(paste0("Model ACC: ", round(acc*100, 2), "%."))
+```
+
+The predicted class probability:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+predictions <- predict(glmnet_mnr, 
+                       newx = as.matrix(X), 
+                       s = best_lambda,
+                       type = "response")
+rowSums(predictions)
+```
+
+
+**NOTE.** The `glmnet` implementation develops a linear predictor for *each class* in multiclass problems, but not in the case of `family="binomial"`. Recode `data_set` so that `quality` represents a binary variable, e.g. `3, 4, 5 -> 0` and `6, 7, 8 -> 1`, and run glmnet:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+dset <- data_set
+dset$quality <- ifelse(dset$quality %in% c(3, 4, 5), 0, 1)
+X <- dset %>% select(-quality)
+y <- dset$quality
+glmnet_mnr <- glmnet(x = X, y = y, 
+                     alpha = 1, 
+                     family = "binomial")
+w_best <- which.min(deviance(glmnet_mnr))
+best_lambda <- glmnet_mnr$lambda[w_best]
+glmnet_mnr_best <- glmnet(x = X, y = y,
+                          alpha = 1,
+                          lambda = best_lambda,
+                          family = "binomial")
+coefficients(glmnet_mnr_best)
+```
+
+Compare: we will simply use `family="multinomial"` for a binomial problem at hand:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+dset <- data_set
+dset$quality <- ifelse(dset$quality %in% c(3, 4, 5), 0, 1)
+X <- dset %>% select(-quality)
+y <- dset$quality
+glmnet_mnr <- glmnet(x = X, y = y, 
+                     alpha = 1, 
+                     family = "multinomial")
+w_best <- which.min(deviance(glmnet_mnr))
+best_lambda <- glmnet_mnr$lambda[w_best]
+glmnet_mnr_best <- glmnet(x = X, y = y,
+                          alpha = 1,
+                          lambda = best_lambda,
+                          family = "multinomial")
+coefficients(glmnet_mnr_best)
+```
+
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.
