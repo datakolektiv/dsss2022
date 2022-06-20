@@ -1,7 +1,7 @@
 ### ----------------------------------------------------------------------------
 ### --- DataKolektiv DATA SCIENCE SUMMER SCHOOL 2022
 ### --- MACHINE LEARNING IN R
-### --- Week 1. Introduction to R for ML
+### --- Week 3. Introduction to R for ML
 ### --- author: Goran S. Milovanović, Phd
 ### --- DataKolektiv, Chief Scientist/Owner
 ### --- DataKolektiv, 2022.
