@@ -5,7 +5,7 @@
 ### --- author: Goran S. Milovanović, Phd
 ### --- DataKolektiv, Chief Scientist/Owner
 ### --- DataKolektiv, 2022.
-### --- script: 10_cv_multiple_linear.R
+### --- script: 10_cv_mlr.R
 ### --- description: CV and reguralization in Multiple Linear Regression
 ### --- with glmnet() and cv.glmnet()
 ### --- license: GPL-3.0 license
