@@ -1,0 +1,321 @@
+---
+title: "DSSS2022 Machine Learning in R: Task List 07"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+# Cross-Validation and Regularization in CART (Classification and Regression Trees)
+
+In this exercise we will perform a complete cross-validation (CV) of a Decision Tree model.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(rpart)
+data_dir <- paste0(getwd(), "/_data/")
+```
+
+### Step 01: The Dataset
+
+We will use the **Kaggle** [Bank Customer Churn Prediction]() competition dataset in this exercise. You will need to download the `Churn_Modelling.csv` data file into your `_data` directory. The task is to predict the `Exited` variable, making this pretty much a churn prediction problem.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set <- read.csv(paste0(data_dir, "Churn_Modelling.csv"), 
+                     header = TRUE,
+                     check.names = FALSE,
+                     stringsAsFactors = FALSE)
+head(data_set)
+```
+
+Let's describe the data at hand:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+glimpse(data_set)
+```
+
+`RowNumber`, `Surname`, and `CustomerId` cannot be used in the prediction of `Exited`, of course.
+
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set <- data_set %>% 
+  select(-any_of(c("RowNumber", "Surname", "CustomerId")))
+```
+
+### Task 01
+
+Train one Decision Tree to predict `Exited` by building an `rpart` Decision Tree in R with the following parameters values: `minsplit = 20`, `minbucket = 50`, `maxdepth = 7`.
+
+- Grow the whole tree first, then prune the model at the optimal value of the Complexity Parameter (cp)
+- Use the `predict()` function to predict `Exit` class probabilities and turn them into class values (`0` or `1`) using a Decision Threshold of `.5`
+- Compute the accuracy, True Positive (Hit) Rate, and False Positive (False Alarm) Rate for this model
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# - fit a Decision Tree model
+rpart_model <- rpart(Exited ~ ., 
+                     data = data_set,
+                     control =  list(cp = 0,
+                                     minsplit = 10,
+                                     minbucket = 50,
+                                     maxdepth = 7),
+                     method = "class"
+)
+
+# - inspect the CP vs xerror plot:
+cp_frame <- as.data.frame(rpart_model$cptable)
+ggplot(data = cp_frame,
+       aes(x = CP, y = xerror)) + 
+  geom_path(group = 1, size = .25) + 
+  geom_point(size = 2) + 
+  theme_bw() + 
+  theme(panel.border = element_blank())
+```
+
+Let's find the minimum `xerror` and pick `CP` accordingly:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+optimal_cp <- cp_frame$CP[which.min(cp_frame$xerror)]
+print(optimal_cp)
+```
+
+Re-train the model with `optimal_cp`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+rpart_model <- rpart(Exited ~ ., 
+                     data = data_set,
+                     control =  list(cp = optimal_cp,
+                                     minsplit = 10,
+                                     minbucket = 50,
+                                     maxdepth = 7),
+                     method = "class"
+)
+```
+
+Use `predict()` to predict the probabilities of the `Exited` classes:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+predictions <- predict(rpart_model, 
+                       newdata = data_set,
+                       type = "prob")
+head(predictions)
+```
+
+Use a Decision Threshold of `.5` to turn predicted class probabilities into classes:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+predictions <- ifelse(predictions[, 1] > predictions[, 2], 
+                      0, 
+                      1)
+table(predictions)
+```
+
+Elementary ROC analysis:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+accuracy <- sum(predictions == data_set$Exited)/length(data_set$Exited)
+print(accuracy)
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+tpr <- sum(predictions == 1 & data_set$Exited == 1)/sum(data_set$Exited == 1)
+print(tpr)
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+fpr <- sum(predictions == 1 & data_set$Exited == 0)/sum(data_set$Exited == 0)
+print(fpr)
+```
+
+Let's see if we can make this model better by varying the Decision Threshold
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+predictions <- predict(rpart_model, 
+                       newdata = data_set,
+                       type = "prob")
+dec_thresh <- seq(.01, .99, by = .01)
+roc_frame <- lapply(dec_thresh, function(x) {
+  preds <- ifelse(predictions[, 2] >= x, 1, 0)
+  accuracy <- sum(preds == data_set$Exited)/length(data_set$Exited)
+  tpr <- sum(preds == 1 & data_set$Exited == 1)/sum(data_set$Exited == 1)
+  fpr <- sum(preds == 1 & data_set$Exited == 0)/sum(data_set$Exited == 0)
+  return(
+    data.frame(
+      acc = accuracy,
+      tpr = tpr,
+      fpr = fpr,
+      dt = x
+    )
+  )
+})
+roc_frame <- Reduce(rbind, roc_frame)
+print(roc_frame)
+```
+
+Plot the ROC for this model:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(data = roc_frame,
+       aes(x = fpr,
+           y = tpr)) + 
+  geom_path(group = 1, color = "red", size = .5) + 
+  geom_point(size = 1, color = "red") + 
+  ggtitle("ROC for Decision Tree") + 
+  theme_bw() + 
+  theme(panel.border = element_blank()) + 
+  theme(plot.title = element_text(hjust = .5))
+```
+
+**Ok, now we have all the elements in place.**
+
+### Task 02
+
+We want to cross-validate this Decision Tree model across the following parameter values:
+
+- `minsplit` takes the value of `20`, `30`, `40`, and `50`;
+- `minbucket` takes the value of `50`, `75`, and `100`;
+- `maxdepth` takes the value of `5`, `10`, and `15`.
+
+First: use `runif` to split your `data_set` into `train_set` and `test_set`, approximately a 50/50 split.
+
+You will always train on your `train_set`.
+You will always evaluate on your `test_set`.
+
+To accomplish this, you either need to write (a) three nested for loops in which `minsplit`, `minbucket`, and `maxdepth` vary, or (b) develop three nested `lapply()` calls, performing function across `minsplit`, `minbucket`, and `maxdepth`; the programming style (functional or not) is up to your choice.
+
+Every time we pick a particular combination of these three parameters, we need to:
+
+- grow the whole tree first on `train_set`, then prune the model at the optimal value of the Complexity Parameter (cp);
+- use the `predict()` function to predict `Exited` class probabilities in `test_set`;
+- use a vector `dec_thresh <- seq(.01, .99, by = .01)` to turn predicted probabilities into `Exited` classes and then inspect the model ROC (accuracy, tpr, fpr) at each level of the Decision Threshold as I did in **Task 01**;
+- store an ROC data.frame as an element of a list every time (i.e. for each combination of `minsplit`, `minbucket`, and `maxdepth`)
+- put all ROC data.frames together in a new data.frame (do not forget to add columns: `dt` for Decision Thrashold, and then minsplit, minbucket, and maxdepth)
+- plot ROCs for ALL obtained model and try to select the best performing one!
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+# - parameter grid
+minsplit_set <- c(20, 30, 40, 50)
+minbucket_set <- c(50, 75, 100)
+maxdepth_set <- c(5, 10, 15)
+
+# - train and test split
+data_set$split <- runif(dim(data_set)[1], 0, 1)
+data_set$split <- data_set$split > .5
+train_set <- data_set[data_set$split, ]
+test_set <- data_set[!data_set$split, ]
+train_set$split <- NULL
+test_set$split <- NULL
+
+# - Cross-Validation over minsplit, minbucket, and maxdepth
+roc_analysis <- lapply(minsplit_set, function(minsplit) {
+  
+  minbucket_result <- lapply(minbucket_set, function(minbucket) {
+    
+    maxdepth_result <- lapply(maxdepth_set, function(maxdepth) {
+      
+      # - rpart model
+      rpart_model <- rpart(Exited ~ ., 
+                     data = train_set,
+                     control =  list(cp = 0,
+                                     minsplit = minsplit,
+                                     minbucket = minbucket,
+                                     maxdepth = maxdepth),
+                     method = "class"
+      )
+      
+      # - find optimal cp
+      optimal_cp <- cp_frame$CP[which.min(cp_frame$xerror)]
+
+      # -  prune the tree at optimal cp
+      rpart_model <- rpart(Exited ~ ., 
+                     data = train_set,
+                     control =  list(cp = optimal_cp,
+                                     minsplit = minsplit,
+                                     minbucket = minbucket,
+                                     maxdepth = minbucket),
+                     method = "class"
+      )
+      
+      # - predict test_set from prunned model
+      predictions <- predict(rpart_model,
+                             newdata = test_set,
+                             type = "prob")
+      
+      # - perform ROC across the Decision Threshold 
+      dec_thresh <- seq(.01, .99, by = .01)
+      roc_frame <- lapply(dec_thresh, function(x) {
+        preds <- ifelse(predictions[, 2] >= x, 1, 0)
+        accuracy <- sum(preds == test_set$Exited)/length(test_set$Exited)
+        tpr <- sum(preds == 1 & test_set$Exited == 1)/sum(test_set$Exited == 1)
+        fpr <- sum(preds == 1 & test_set$Exited == 0)/sum(test_set$Exited == 0)
+        return(
+          data.frame(
+            acc = accuracy,
+            tpr = tpr,
+            fpr = fpr,
+            dt = x
+            )
+          )
+        })
+      
+      # - collect the result, add maxdepth level, and return
+      roc_frame <- Reduce(rbind, roc_frame)
+      roc_frame$maxdepth = maxdepth
+      return(roc_frame)
+      
+    })
+    
+    # - collect the result, add minbucket level, and return
+    
+    maxdepth_result <- Reduce(rbind, maxdepth_result)
+    maxdepth_result$minbucket <- minbucket
+    return(maxdepth_result)
+    
+  })
+  
+  
+  # - collect the result, add minsplit level, and return
+  minbucket_result <- Reduce(rbind, minbucket_result)
+  minbucket_result$minsplit <- minsplit
+  return(minbucket_result)
+  
+})
+
+# - collect the result
+roc_analysis <- Reduce(rbind, roc_analysis)
+print(roc_analysis)
+
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+roc_analysis$model <- paste(roc_analysis$maxdepth,
+                            roc_analysis$minbucket,
+                            roc_analysis$minsplit,
+                            sep = "-")
+ggplot(data = roc_analysis, 
+       aes(x = fpr,
+           y = tpr, 
+           color = model)) + 
+  geom_path(size = .05) + 
+  ggtitle("ROC for Decision Tree Models") + 
+  theme_bw() + 
+  theme(panel.border = element_blank()) + 
+  theme(plot.title = element_text(hjust = .5)) + 
+  theme(legend.title = element_blank()) + 
+  theme(legend.text = element_text(size = 6))
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+roc_analysis <- arrange(roc_analysis, 
+                        maxdepth, minbucket, minsplit, dt)
+write.csv(roc_analysis, paste0(getwd(), "/_analytics/roc_analysis.csv"))
+```
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.

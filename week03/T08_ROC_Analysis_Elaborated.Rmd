@@ -1,0 +1,171 @@
+---
+title: "DSSS2022 Machine Learning in R: Task List 08"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+# ROC Analysis Elaborated
+
+Consider the following ROC Analysis:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# - setup
+library(tidyverse)
+library(rpart)
+data_dir <- paste0(getwd(), "/_data/")
+# - dataset: Churn_Modelling.csv
+data_set <- read.csv(paste0(data_dir, "Churn_Modelling.csv"), 
+                     header = TRUE,
+                     check.names = FALSE,
+                     stringsAsFactors = FALSE)
+# - rpart model
+rpart_model <- rpart(Exited ~ .,
+                     data = data_set,
+                     control =  list(cp = 0.05,
+                                     minsplit = 20,
+                                     minbucket = 50,
+                                     maxdepth = 5),
+                     method = "class"
+                     )
+
+# - predict 
+predictions <- predict(rpart_model, 
+                       newdata = data_set,
+                       type = "prob")
+dec_thresh <- seq(.01, .99, by = .01)
+roc_frame <- lapply(dec_thresh, function(x) {
+  preds <- ifelse(predictions[, 2] >= x, 1, 0)
+  tp <- sum(preds == 1 & data_set$Exited == 1)
+  fp <- sum(preds == 1 & data_set$Exited == 0)
+  fn <- sum(preds == 0 & data_set$Exited == 1)
+  tn <- sum(preds == 0 & data_set$Exited == 0)
+  return(
+    data.frame(
+      TPR = tp/(tp + fn),
+      FPR = fp/(fp + tn),
+      FNR = fn/(tp + fn),
+      TNR = tn/(fp + tn),
+      dt = x
+    )
+  )
+})
+roc_frame <- Reduce(rbind, roc_frame)
+# - plot ROC
+ggplot(data = roc_frame,
+       aes(x = FPR,
+           y = TPR)) + 
+  geom_path(group = 1, color = "red", size = .5) + 
+  geom_point(size = 1, color = "red") + 
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", size = .25) +
+  xlab("FPR (False Alarm Rate") + 
+  ylab("TPR (Hit Rate)") + 
+  ggtitle("ROC for Decision Tree") + 
+  theme_bw() + 
+  theme(panel.border = element_blank()) + 
+  theme(plot.title = element_text(hjust = .5))
+```
+
+Until now, we have discussed the ROC analysis in terms of $TPR$ (True Positive, or Hit Rate) and $FPR$ (False Positive, or False Alarm Rate). The best possible binary classifier is the one with $TPR=1$ (i.e. always recognizes the target class correctly) and $FPR=0$ (i.e. never confuses the target class with the other class present in the task): it is found in the very top left corner of the ROC plot.
+
+However, there are more indicators of model performance that can be computed from the Confusion Matrix.
+
+**Some terminology first: enter Confusion Matrix**
+
+This is all a binary classifier can do:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+confusion_matrix <- data.frame(`Model_YES` = c("TP (Hit)", "FP (False Alarm)"), 
+                               `Model_NO` = c("FN (Miss)", "TN (Correct Rejection)"))
+rownames(confusion_matrix) <- c("Observation_YES", "Observation_NO")
+print(confusion_matrix)
+```
+
+- The $TPR$ (True-Positive Rate, or *Hit*) is also known as **Sensitivity**, **Recall**, or **Probability of Detection**. It is the probability that the classifier correctly recognizes the target class, i.e. $P(Predict=C_T|Observation=C_T)$.
+- The $FPR$ (False-Positive Rate, or *False Alarm*) is the probability that the classifier incorrectly predicts the target class when the other class is really in case, i.e. $P(Predict=C_T|Observation=\overline{C_T})$.
+- The $TNR$ (True-Negative Rate, or *Correct Rejection*), a.k.a. as **specificity** or **selectivity** is the probability that the classifier correctly predicts the absence of the target class when the other class is really in case, i.e. $P(Predict=\overline{C_T}|Observation=\overline{C_T})$.
+- The $FNR$ (False-Negative Rate, or *Miss*) is the probability that the classifier incorrectly predicts the absence of the target class when the target class is really in case, i.e. $P(Predict=\overline{C_T}|Observation=C_T)$.
+
+The ROC plot can thus also be understood as $1-Specificity$ vs $Sensitivity$ plot (beacuse $FPR = 1 - Specificity$). In mathematical statistics, the **Type I Error** indicates a situation in which our statistical model predicts something which is not the case in the population (that is your $\alpha$ level in statistical analyses): this concept is completely mapped by our $FPR$ or False Alarm. On the other hand, **Statistical Power** is the probability by which a statistical model (or test) can successfully recover an occurrence in the population: and this is perfectly matched by our understanding of $TPR$ or Hit Rate. Thus, the ROC also plots the **Type I Error** against **Statistical Power**.
+
+**Precision (or Positive Predictive Value (PPV)) and False Discovery Rate (FDR)**
+
+$$PPV = \frac{TP}{TP+FP}=1-FDR$$
+
+The classifier's **Precision** is the ratio of *True Positives* to the sum of *True Positives* and *False Positives*: the ratio of correct ("relevant") classifications to the number of positive classifications made.
+
+
+$$FDR = \frac{FP}{FP+TP}=1-PPV$$
+
+The classifier's **False Discovery Rate** is the ratio of *False Positives* to the sum of *True Positives* and *False Positives*: the ratio of incorrect ("irrelevant") classifications to the number of positive classifications made.
+
+**Accuracy and Balanced Accuracy**
+
+In cases of highly imbalanced classes in binary classification, *Accuracy* can give us a dangerously misleading result:
+
+$$Accuracy = \frac{TP+TN}{TP+TN+FP+FN}$$
+
+Balanced Accuracy ($bACC$) can be used to correct for class imbalance:
+
+$$bACC=\frac{TPR+TNR}{2}$$
+
+To understand how $bACC$ works, think of the following case: we have a dataset with 100 observations of which 75 are class $C_1$ and 25 of class $C_2$; hence, the model that *always* predict $C_1$ and never $C_2$ must be accurate 75% of time, right? However, it's $bACC$ is only .5 (because its $TPR=1$ and $TNR=0$).
+
+**The $F_1$ score**
+
+This is traditionally used to asses how good a classifier is:
+
+$$F_1 = 2\frac{Precision\cdot Recall}{Precision+Recall}$$
+
+and is also known as *F-measure* or *balanced F-score*.
+
+**Note.**
+
+- **Precision** is important to use when *minimizing false positives* is the goal: maximizing precision will minimize the number of false positives;
+- **Recall** is important to use when *minimizing false negatives* is the goal: maximizing the recall will minimize the number of false negatives:
+
+$$Precision = \frac{TP}{TP+FP}$$
+
+
+$$Recall = \frac{TP}{TP+FN}$$
+
+We can thus use a more general $F-score$, $F_\beta$, where $\beta$ determines the times recall is considered as important as precision:
+
+$$F_\beta = (1+\beta^2)\frac{Precision\cdot Recall}{\beta^2 \cdot Precision+Recall}$$
+
+**Area Under the Curve (AUC)**
+
+This is probably the most frequently used indicator of model fit in classification. Given that the ideal classifier is found in the top left corner of the ROC plot, i.e. where $TPR=1$ and $FPR=0$, it is obvious that the best model in some comparison is the one with the greatest area under the ROC.
+
+There are many R and Python packages that can compute $AUC$; one of them is R's `pROC`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# - Setup
+library(pROC)
+
+# - set Decision Thrashold to .5 just for the purposes of the example
+dt <- .5
+predictions <- ifelse(predictions[, 2] >= dt, 1, 0)
+
+# - compute AUC
+roc_set <- data.frame(response = data_set$Exited,
+                      predictor = predictions)
+roc_obj <- roc(roc_set,
+               response = response,
+               predictor = predictor,
+               ci = T)
+model_auc <- as.numeric(roc_obj$auc) 
+print(model_auc)
+```
+
+$AUC$ ranges in value from 0 to 1.
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.
