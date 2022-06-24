@@ -48,13 +48,12 @@ test_set <- xgb.DMatrix(test_set, label = Exited_test)
 dim(test_set)
 
 # - Downsampling and Upscaling
-t <- table(Exited_train)
+t <- table(train_set$Exited)
 print(t)
 # - use only 25% of negative (0) samples
 # - downsampling factor
 p_choice <- .25
 downsample_factor <- p_choice * sum(Exited_train == 0)
-print(downsample_factor)
 print(paste0("p_choice is: ", p_choice))
 print(paste0("downsample_factor is: ", downsample_factor))
 # - downsample
@@ -245,8 +244,8 @@ print(paste0("TNR (CR) at decision boundary of .5: ", round(TNR_05, 2)))
 FNR_05 <- sum(pred_frame$prediction == 0 & pred_frame$observed == 1)/sum(pred_frame$observed == 1)
 print(paste0("FNR (Miss) at decision boundary of .5: ", round(FNR_05, 2)))
 
-TPR_05
-precision <- TPR_05/(TPR_05+FPR_05)
-precision
+print(paste0("Recall: ", round(TPR_05, 2)))
+precision <- round(TPR_05/(TPR_05+FPR_05), 2)
+print(paste0("Precision: ", precision))
 
 

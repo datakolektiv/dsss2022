@@ -157,5 +157,3 @@ rfModels_AUC <- rfModels %>%
 rfModels %>% 
   dplyr::filter(ntree == rfModels_AUC$ntree[1] & mtry == rfModels_AUC$mtry[1])
 
-
-
