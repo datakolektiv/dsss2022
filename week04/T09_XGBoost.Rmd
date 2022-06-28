@@ -1,0 +1,88 @@
+---
+title: "DSSS2022 Machine Learning in R: Task List 09"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+# XGBoost in R: Cross Validation 
+
+The dataset for this exercise is found in the UCI Machine Learning Repository: [Online News Popularity Data Set](https://archive.ics.uci.edu/ml/datasets/Online+News+Popularity). Enter [Data Folder](https://archive.ics.uci.edu/ml/machine-learning-databases/00332/) and download the `OnlineNewsPopularity.zip` file; inside you will find the `OnlineNewsPopularity.csv` file. Place it in your `_data` directory. The description of the dataset is available from the `OnlineNewsPopularity.names`, found in the same archive.
+
+The task is to predict the **web popularity** of a post: the number of *shares* a post receives once it is published. 
+
+## Setup
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(xgboost)
+data_dir <- paste0(getwd(), "/_data/")
+```
+
+
+## Data
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# - dataset: OnlineNewsPopularity.csv
+data_set <- read.csv(paste0(data_dir, "OnlineNewsPopularity.csv"), 
+                     header = TRUE,
+                     check.names = FALSE,
+                     stringsAsFactors = FALSE)
+glimpse(data_set)
+```
+
+Variables `url` and `timedelta` are considered to be non-predictive; let's remove them from the dataset:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set <- data_set %>% 
+  dplyr::select(-url,
+                -timedelta)
+```
+
+The dataset already presents a decent design matrix; no encoding of categorical factors is necessary (c.g. the `weekday_is...` variables), and XGBoost can be immediately applied.
+
+**The task is to predict the number of `shares` from the available predictors.**
+
+## Task 01
+
+Your task is to *fine-tune the XGBoost parameters* for this problem. 
+
+This is how you need to proceed:
+
+- First, rely heavily on our code from [13_boosting_XGBoost.R](https://github.com/datakolektiv/dsss2022/blob/main/week04/13_boosting_XGBoost.R)
+
+- Second, you need to use a 5-fold cross-validation: recall how we introduced a fold index to separate folds in cross-validation; with a 5-fold CV design you will achieve an approximately 80/20 split between training and test datasets each time you run your model; **note** in [13_boosting_XGBoost.R](https://github.com/datakolektiv/dsss2022/blob/main/week04/13_boosting_XGBoost.R) we have used just a train-test split, not a full CV approach.
+
+- Next, you will need to perform parameter tuning in cross-validation across the following parameters:
+   - fix the `num_round` parameter to `1000` for this exercise;
+   - let `eta` (learning rate) take the values of .1, .2;
+   - let `max_depth` take the values of `4`, `5`, `6`;
+   - let `gamma` take values of `.1`, `.2`, `.5`;
+   - let `colsample_bytree` take the values of `.5`, `.7`, `.9`;
+   - let `subsample` take the values of `.5`, `.75`;
+   - let `reg_alpha` take the values of `.01`, `0.1`, `1,` `100`.
+<br>   
+- Finally, since your task is to predict the **number of shares**, you will need to set:
+  - `objective = "count:poisson"`, and
+  - `eval_metric = "poisson-nloglik"`
+
+because you will be using Gradient Boosted Regression Trees to solve the [Poisson Regression](https://en.wikipedia.org/wiki/Poisson_regression) problem via XGBoost.
+
+Each time a particular fold is completed, compute the [Kendall's $\tau$ rank-order correlation](https://en.wikipedia.org/wiki/Kendall_rank_correlation_coefficient) coefficient between model's predictions and the the test fold data; hint: `kendall_tau <- cor.test(x, y, method="kendall")`.
+  
+**Note A.** This might take a while to execute on a laptop. I would suggest trying to write out the code and then sharing the code with me: then we can run it together on DataKolektiv's server. Scaling down the problem (which I find completelly legitimate) could perhaps help run this on a laptop efficiently.
+  
+**Note B.** You have noticed that a cross-validation of model with so many parameters as XGBoost can be a dounting task. However, there are approaches to fine-tune the XGBoost parameters in groups; if you can read Python, this might be a beginning of an interesting journey in that direction: [Complete Guide to Parameter Tuning in XGBoost with codes in Python](https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/).
+
+**Note C.** **This is difficult, I know**, but (a) you have all the code that you need to perform this CV in our repository and you just need to figure out how to reuse it properly, and (b) *learn to Google*, as they say: you will certainly not be the first to ever attempt to this in R.
+
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.
