@@ -1,0 +1,264 @@
+---
+title: "DSSS2022 Machine Learning in R: Task List 09"
+output: html_notebook
+author: Goran S. Milovanovic, DataKolektiv
+---
+
+![](DK_Logo_White_150.png)
+
+# XGBoost in R: Cross Validation 
+
+The dataset for this exercise is found in the UCI Machine Learning Repository: [Online News Popularity Data Set](https://archive.ics.uci.edu/ml/datasets/Online+News+Popularity). Enter [Data Folder](https://archive.ics.uci.edu/ml/machine-learning-databases/00332/) and download the `OnlineNewsPopularity.zip` file; inside you will find the `OnlineNewsPopularity.csv` file. Place it in your `_data` directory. The description of the dataset is available from the `OnlineNewsPopularity.names`, found in the same archive.
+
+The task is to predict the **web popularity** of a post: the number of *shares* a post receives once it is published. 
+
+## Setup
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(xgboost)
+library(pROC)
+data_dir <- paste0(getwd(), "/_data/")
+```
+
+
+## Data
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# - dataset: OnlineNewsPopularity.csv
+data_set <- read.csv(paste0(data_dir, "OnlineNewsPopularity.csv"), 
+                     header = TRUE,
+                     check.names = FALSE,
+                     stringsAsFactors = FALSE)
+glimpse(data_set)
+```
+
+Variables `url` and `timedelta` are considered to be non-predictive; let's remove them from the dataset:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set <- data_set %>% 
+  dplyr::select(-url,
+                -timedelta)
+```
+
+The dataset already presents a decent design matrix; no encoding of categorical factors is necessary (c.g. the `weekday_is...` variables), and XGBoost can be immediately applied.
+
+**The task is to predict the number of `shares` from the available predictors.**
+
+## Task 01
+
+Your task is to *fine-tune the XGBoost parameters* for this problem. 
+
+This is how you need to proceed:
+
+- First, rely heavily on our code from [13_boosting_XGBoost.R](https://github.com/datakolektiv/dsss2022/blob/main/week04/13_boosting_XGBoost.R)
+
+- Second, you need to use a 5-fold cross-validation: recall how we introduced a fold index to separate folds in cross-validation; with a 5-fold CV design you will achieve an approximately 80/20 split between training and test datasets each time you run your model; **note** in [13_boosting_XGBoost.R](https://github.com/datakolektiv/dsss2022/blob/main/week04/13_boosting_XGBoost.R) we have used just a train-test split, not a full CV approach.
+
+- Next, you will need to perform parameter tuning in cross-validation across the following parameters:
+   - fix the `num_round` parameter to `1000` for this exercise;
+   - let `eta` (learning rate) take the values of .1, .2;
+   - let `max_depth` take the values of `4`, `5`, `6`;
+   - let `gamma` take values of `.1`, `.2`, `.5`;
+   - let `colsample_bytree` take the values of `.5`, `.7`, `.9`;
+   - let `subsample` take the values of `.5`, `.75`;
+   - let `reg_alpha` take the values of `.01`, `0.1`, `1,` `100`.
+<br>   
+- Finally, since your task is to predict the **number of shares**, you will need to set:
+  - `objective = "count:poisson"`, and
+  - `eval_metric = "poisson-nloglik"`
+
+because you will be using Gradient Boosted Regression Trees to solve the [Poisson Regression](https://en.wikipedia.org/wiki/Poisson_regression) problem via XGBoost.
+
+Each time a particular fold is completed, compute the [Kendall's $\tau$ rank-order correlation](https://en.wikipedia.org/wiki/Kendall_rank_correlation_coefficient) coefficient between model's predictions and the the test fold data; hint: `kendall_tau <- cor.test(x, y, method="kendall")`.
+  
+**Note A.** This might take a while to execute on a laptop. I would suggest trying to write out the code and then sharing the code with me: then we can run it together on DataKolektiv's server. Scaling down the problem (which I find completelly legitimate) could perhaps help run this on a laptop efficiently.
+  
+**Note B.** You have noticed that a cross-validation of model with so many parameters as XGBoost can be a dounting task. However, there are approaches to fine-tune the XGBoost parameters in groups; if you can read Python, this might be a beginning of an interesting journey in that direction: [Complete Guide to Parameter Tuning in XGBoost with codes in Python](https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/).
+
+**Note C.** **This is difficult, I know**, but (a) you have all the code that you need to perform this CV in our repository and you just need to figure out how to reuse it properly, and (b) *learn to Google*, as they say: you will certainly not be the first to ever attempt to this in R.
+
+### Step 01: Prepare for a 5-fold cross-validation
+
+First, let's introduce the `fold` column, by randomly sampling with replacement from `1:5`:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+data_set$fold <- sample(1:5,
+                        dim(data_set[1]),
+                        replace = TRUE)
+table(data_set$fold)
+```
+
+Ok: the folds are at least approximately of the same size. Now, let's plan the cross-validation (CV) design. 
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+eta <- c(.1, .2)
+max_depth <- c(4, 5, 6)
+gamma <- c(.1, .2, .5)
+colsample_bytree <- c(.5, .6, .7)
+subsample <- c(.5, .75)
+reg_alpha <- c(.01, 0.1, 1, 100)
+fold <- 1:5
+cv_design <- expand.grid(fold, 
+                         eta, 
+                         max_depth,
+                         gamma,
+                         colsample_bytree,
+                         subsample,
+                         reg_alpha)
+colnames(cv_design) <- c("fold",
+                         "eta", 
+                         "max_depth",
+                         "gamma",
+                         "colsample_bytree",
+                         "subsample",
+                         "reg_alpha")
+head(cv_design)
+```
+
+Now we turn `cv_design` into a list, each row becoming a list element:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+cv_design <- apply(cv_design, 1, function(x) {
+  return(
+     as.data.frame(t(x))
+  )
+})
+cv_design[[1]]
+```
+
+Now each element of the `cv_design` list is a data frame with one row only, columns exactly specifying which fold will be considered a test fold, and what parameters should XGBoost use. Clarification: if `fold==1`, for example, that means that folds `2`, `3`, `4`, and `5` will be used together as a training set.
+
+We will perform the whole CV by making one `lapply()` call over `cv_design`. There are:
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+length(cv_design)
+```
+
+models to estimate in total.
+
+### Step 02: Run cross-validation
+
+Let' see.
+
+**N.B.** I will train only the first fifty specified models in `cv_design` in order to render this Notebook and not wait for the whole CV to complete. In reality, even the whole CV as presented here is probably not enough to select the "best" XGBoost model for this task!
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# - N.B. You want to comment the following code
+# - in order to run the full CV
+cv_design <- cv_design[1:50]
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# - how many cores to use:
+n_cores <- parallel::detectCores()-1
+# - run XGBoost CV
+xgboost_models <- lapply(cv_design, function(x) {
+   
+   # - retrieve parameters
+   fold <- x$fold
+   eta <- x$eta
+   max_depth <- x$max_depth
+   gamma <- x$gamma
+   colsample_bytree <- x$colsample_bytree
+   subsample <- x$subsample
+   reg_alpha <- x$reg_alpha
+   
+   # - prepare training and test data
+   test_set <- data_set[data_set$fold == fold, ]
+   train_set <- data_set[data_set$fold != fold, ]
+   
+   # - design matrices + xgb.DMatrix class
+   train_set$fold <- NULL
+   y_train <- train_set$shares
+   train_set$shares <- NULL
+   train_set <- xgb.DMatrix(as.matrix(train_set), label = y_train)
+   test_set$fold <- NULL
+   y_test <- test_set$shares
+   test_set$shares <- NULL
+   test_set <- xgb.DMatrix(as.matrix(test_set), label = y_test)
+   
+   # - run XGBoost
+   t1 <- Sys.time()
+   res_boost <- xgb.train(
+      data = train_set,
+      watchlist = list(validation = test_set),
+      params = list(booster = "gbtree",
+                    nthread = n_cores,
+                    eta = eta,
+                    max_depth = max_depth,
+                    gamma = gamma,
+                    colsample_bytree = colsample_bytree,
+                    subsample = subsample,
+                    reg_alpha = reg_alpha,
+                    objective = "count:poisson"),
+        nrounds = 1000,
+        verbose = 0,
+        print_every_n = 0,
+        eval_metric = "poisson-nloglik",
+        early_stopping_rounds = NULL,
+        maximize = NULL,
+        save_period = NULL,
+        save_name = NULL,
+        xgb_model = NULL
+      )
+      training_time <- difftime(Sys.time(), t1, units = "mins")
+      
+      # - predict test set
+      predictions <- round(predict(res_boost, test_set), 0)
+      
+      # - compute Kendall's Tau between predictions and y_test
+      kendall_tau <- cor.test(predictions,
+                              y_test,
+                              method = "kendall")
+      kendall_tau <- as.numeric(kendall_tau$estimate)
+      
+      # - output
+      out = data.frame(fold = fold,
+                       eta = eta, 
+                       max_depth = max_depth,
+                       gamma = gamma, 
+                       colsample_bytree = colsample_bytree,
+                       subsample = subsample, 
+                       reg_alpha = reg_alpha,
+                       kendall_tau = kendall_tau,
+                       training_time = as.numeric(training_time))
+      return(out)
+      
+})
+```
+
+### Step 03: Inspect results
+
+Put together `xgboost_models`,
+- group by parameter values,
+- compute the average Kendall Tau,
+- sort by decreasing `avg_kendall_tau`, and figure out the parameters for the best model according to the average Kendall's Tau coefficient of rank-correlation obtained from 5-fold CV.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+xgboost_models <- Reduce(rbind, xgboost_models)
+total_training_time <- sum(xgboost_models$training_time)
+print(paste0("TOTAL TRAINING TIME: ", total_training_time, " minutes."))
+xgboost_models <- xgboost_models %>% 
+   dplyr::select(-fold, -training_time) %>% 
+   dplyr::group_by(eta,
+                   max_depth,
+                   gamma,
+                   colsample_bytree, 
+                   subsample,
+                   reg_alpha) %>% 
+   dplyr::summarise(avg_kendall_tau = mean(kendall_tau)) %>% 
+   dplyr::arrange(desc(avg_kendall_tau))
+print(xgboost_models)
+```
+
+Don't be disappointed! You are solving a very difficult problem of *ex-ante* (or *a priori*) [web content popularity prediction](https://www.sciencedirect.com/science/article/abs/pii/S2468696418300971) problem here: it is quite possible that there even are theoretical limitiations on the predictive power of any model in this situation.
+
+--- 
+
+![](dsss2022_startit_add.jpg)
+--- 
+
+**Data Science Summer School 2022** <br>
+**Machine Learning in R** <br>
+DataKolektiv, Belgrade, June 2022.
